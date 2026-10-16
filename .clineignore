@@ -1,0 +1,24 @@
+# Engine cache / generated artifacts -- never useful as context
+.godot/
+
+# Git internals (inspect history with git commands instead)
+.git/
+
+# Binary assets -- not meaningful as text context. godot/assets/catalog.json
+# stays visible on purpose: it is the law file the linter enforces.
+*.png
+*.jpg
+*.webp
+*.zip
+*.7z
+*.glb
+*.gltf
+*.obj
+*.fbx
+*.blend
+*.wav
+*.ogg
+*.mp3
+*.aseprite
+*.import
+*.uid

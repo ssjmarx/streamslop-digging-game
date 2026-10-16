@@ -1,0 +1,66 @@
+# Cline rules -- streamslop digging game
+
+## Boot order (read at session start, in this order)
+
+1. `docs/instructions.md` -- the canonical rules file. It governs; what
+   follows is only its operational summary.
+2. `docs/ROADMAP.md` -- the working roadmap: milestones 0.0.1 through
+   0.1.0, with scope, exit tests, and the feel checklist. The only doc
+   describing future work in detail.
+3. `docs/GDD.md` -- design law, final-form (current systems and
+   ship-plan; no history). When behavior and design disagree, the design
+   docs win and the code is wrong.
+4. `docs/dev_log.md` -- the development log: session rulings, changelogs,
+   supersessions. Evidence, not law; consult when provenance matters.
+
+## The One Rule (spiritual)
+
+`dig.gd` may be touched -- refactors, engine upgrades, bug fixes,
+netcode seams. What may never change is the player-facing experience
+(`docs/GDD.md` §2):
+
+- One verb. The verb set is `{dig}` and it stays that size.
+- Swing rate 0.45s. Never tuned, never upgraded, never buffed by
+  anything.
+- Depth is infinite. Width is purchasable. Never the reverse.
+- Nothing ever happens in the hole.
+- The clang.
+
+Enforcement: dave's conscience (dave is the human, in GDD fiction). Not
+CI. CI enforces exactly one real thing -- the credits.
+
+## Laws on every session
+
+- There are no tests. There will never be tests. The feel checklist
+  (`docs/ROADMAP.md` §4) is the entire regression suite; a failed
+  checkbox blocks the tag. CI enforces nothing about gameplay.
+- Autoloads: DirtBus, GameState, Attribution -- in that order. DirtBus
+  is the only bus. Signals may be appended, never removed. There will
+  never be a second bus.
+- Version stays 0.x. Bumps only at milestone gates.
+- The Godot project lives in `godot/`; `res://` is `godot/`'s root.
+  Repo-level docs and tooling (this file, `docs/`, `tools/`, `.github/`)
+  live at the repo root, witchgame-style. Two roots, on purpose.
+- GDScript: tabs, 4-wide. Comment house discipline as in witchgame
+  (3-line `##` file header, one `##` docstring above every func, single
+  `#` one-liners inside bodies) -- honored by hand; there is no linter
+  here and there will never be one.
+
+## Gates before you call any change done
+
+1. `python3 tools/attr_lint.py` exits 0 -- every asset file under
+   `godot/assets/` is claimed in `godot/assets/catalog.json`.
+2. After adding or moving any script with `class_name`, rescan first
+   (task "streamslop: Godot class rescan (headless)") or reload the
+   project in the open editor -- otherwise headless runs lie.
+3. When a milestone closes: the feel checklist, by hand, in full.
+
+## Working agreements
+
+- Small, scoped diffs; one concern per change. Nothing is committed and
+  nothing is pushed without an explicit human go.
+- Design ambiguities: ask, never assume (`docs/GDD.md` is the canonical
+  vision, updateable by the human at any time).
+- Memory bank duty: update `docs/` at the end of every working session,
+  whenever the human reports a milestone or ruling, and whenever the
+  bank has drifted from reality.

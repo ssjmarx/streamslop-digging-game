@@ -1,0 +1,12 @@
+[
+  {"id": "font_hud",         "name": "Kenney Fonts",               "author": "Kenney",             "license": "CC0",          "path": "fonts/kenney_fonts.zip"},
+  {"id": "tex_dirt_01",      "name": "Ground Dirt 001",            "author": "ambientCG",          "license": "CC0",          "path": "textures/ambientcg/ground_dirt_001.zip"},
+  {"id": "mesh_shovel_01",   "name": "Shovel",                     "author": "Quaternius",         "license": "CC0",          "path": "meshes/quaternius/shovel.glb"},
+  {"id": "mesh_character_01","name": "Adventurer",                 "author": "Quaternius",         "license": "CC0",          "path": "meshes/quaternius/adventurer.glb"},
+  {"id": "anim_walkcycle",   "name": "Universal Animation Library","author": "Quaternius",         "license": "CC0",          "path": "anims/quaternius/universal_animation_library.zip"},
+  {"id": "sky_procedural",   "name": "ProceduralSkyMaterial",      "author": "Godot Engine",       "license": "MIT"},
+  {"id": "sfx_clang",        "name": "Shovel Clang",               "author": "Sonniss GDC Bundle", "license": "royalty-free", "path": "audio/sonniss/clang.wav"},
+  {"id": "sfx_whiff",        "name": "Swing Whiff",                "author": "Sonniss GDC Bundle", "license": "royalty-free", "path": "audio/sonniss/whiff.wav"},
+  {"id": "sfx_footstep",     "name": "Footsteps Gravel",           "author": "Sonniss GDC Bundle", "license": "royalty-free", "path": "audio/sonniss/footsteps_gravel.wav"},
+  {"id": "mesh_sign_01",     "name": "Wooden Sign",                "author": "Kenney",             "license": "CC0",          "path": "meshes/kenney/sign.glb"}
+]
