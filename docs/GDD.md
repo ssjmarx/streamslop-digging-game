@@ -73,11 +73,16 @@ LMB → erase voxel sphere → +dirt → walk to kiosk → sell → buy a wider 
 
 ## §5 Movement
 
-- Walk / sprint / crouch (toggle — this is also a personality choice) / jump.
-- First/third-person camera toggle (V). In first person the body is hidden entirely
-  (v0.1 choice, final) and the shovel viewmodel shows; in third person the avatar
-  shows on a hand-rolled SpringArm (replaced by an addon in a later patch, as is
-  tradition).
+- Walk / sprint / crouch (hold) / jump.
+- First/third-person camera toggle (P). The body stays visible in both modes: in
+  first person the camera rides just forward of the face and the body stays
+  view-aligned (human ruling 2026-10-15 — supersedes the v0.1 hide-the-body choice);
+  in third person the body faces its movement direction on a hand-rolled SpringArm
+  (replaced by an addon in a later patch, as is tradition). While running,
+  crouching, or AIRBORNE in first person the CAMERA slides a little further
+  forward than its hand-tuned base offset (the airborne bump is additive with
+  the run slide), strictly so it never rides into the torso — the body
+  itself never moves (ruling: slide the camera, not her).
 - Dig-jump (§3). No other air control. No death: you cannot die and you cannot leave —
   there is nothing to leave to.
 - Crouch is a non-goal to document (§14). Do not ask.

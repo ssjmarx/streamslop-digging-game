@@ -40,10 +40,13 @@ def claimed_paths(catalog: list) -> set:
 
 
 def asset_files() -> list:
-	"""Every regular file under assets/ except the catalog itself."""
+	"""Every regular file under assets/ except the catalog and engine
+	metadata (*.import files are generated bookkeeping, not assets)."""
 	return sorted(
 		p for p in ASSETS_DIR.rglob("*")
-		if p.is_file() and p.name != CATALOG_PATH.name
+		if p.is_file()
+		and p.name != CATALOG_PATH.name
+		and not p.name.endswith(".import")
 	)
 
 

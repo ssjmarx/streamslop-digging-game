@@ -1,3 +1,7 @@
 # Engine cache and retired-tool artifacts -- matches at any depth
 .godot/
 .aider*
+
+# Exported builds (the build ritual drops zips here; they live on the
+# shared folder, not in history)
+dist/

@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://cou03cf37jit0"]
+
+[ext_resource type="Script" uid="uid://rc7dtwx72ny" path="res://scripts/player_controller.gd" id="1_player"]
+
+[sub_resource type="CapsuleShape3D" id="capsule_shape"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="capsule_mesh"]
+radius = 0.35
+height = 1.8
+
+[node name="Player" type="CharacterBody3D" unique_id=488565832]
+collision_layer = 2
+script = ExtResource("1_player")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=146152434]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("capsule_shape")
+
+[node name="Mesh" type="Node3D" parent="." unique_id=366425383]
+
+[node name="Placeholder" type="MeshInstance3D" parent="Mesh" unique_id=1523394183]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+visible = false
+mesh = SubResource("capsule_mesh")
+
+[node name="Rig" type="Node3D" parent="." unique_id=51228431]
+
+[node name="Pitch" type="Node3D" parent="Rig" unique_id=426061465]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Boom" type="SpringArm3D" parent="Rig/Pitch" unique_id=1867865877]
+spring_length = 3.5
+
+[node name="CameraTP" type="Camera3D" parent="Rig/Pitch/Boom" unique_id=311543870]
+fov = 70.0
+
+[node name="FP" type="Node3D" parent="Rig" unique_id=1741678121]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -0.25)
+
+[node name="Camera" type="Camera3D" parent="Rig/FP" unique_id=2002632482]
+current = true
+fov = 90.0
+
+[node name="VoxelViewer" type="VoxelViewer" parent="." unique_id=12735774]
+view_distance = 256

@@ -82,10 +82,46 @@ gate, and a failed checkbox blocks the tag. Do not build test infrastructure. Do
 
   Otherwise the next headless run lies.
 
-- **GDScript house style, by hand.** Tabs, 4-wide. Three-line `##` file header at the top
-  of every `.gd` file; one `##` docstring line directly above every func (same indent);
-  single `#` one-liners only inside function bodies; `# -- Section ------` banners at
-  class scope. There is no linter here and there will never be one — the discipline is
-  the point.
+- **After swapping the voxel extension (anything under `addons/`), delete `godot/.godot`
+  and rescan.** A cache built across an extension/scene change silently bricks terrain
+  streaming: `VoxelTerrain` runs block detection exactly once, requests nothing, and the
+  player falls through a world that will never exist — with zero errors printed
+  (2026-10-15, dev_log #1). The streaming bisect probe lives at
+  `scenes/testing/probe_terrain.tscn`:
+
+      PROBE_MODE=pure|noplayer|main Godot --headless --path godot \
+          res://scenes/testing/probe_terrain.tscn
+
+  `has_data_block(0,0,0)` must read `true` within a few seconds. Companion tools:
+  `scripts/tools/introspect_voxel.gd` (pinned API dump) and
+  `scripts/tools/probe_ual_anims.gd` (imported clip names).
+
+- **The glTF importer strips `_Loop` suffixes from animation names** and drops the loop
+  flags with them. Runtime-bound animation libraries must re-apply looping by name
+  (the LOOPERS list in `player_controller.gd`); imported clip names are verified by
+  `scripts/tools/probe_ual_anims.gd`.
+
+- **Every voxel read/write names its channel.** `VoxelGeneratorFlat` defaults to the
+  SDF channel, which `VoxelMesherBlocky` never reads — the unconfigured pair produces
+  a world with data but no visible ground, and the only warning appears in the editor
+  viewport, never headless (2026-10-15). Generators, mesher libraries, and every
+  `VoxelTool` set `channel` explicitly: TYPE (0) for the blocky world. The GDD
+  Appendix B reference code already does this; world code must too.
+
+- **Blocky model `color` bakes as VERTEX colors.** They render only through a
+  material that uses them: the terrain carries `material_override` with
+  `vertex_color_use_as_albedo = true` (`main.tscn`). A default material ignores
+  the colors and the whole world renders white — including your carefully chosen
+  checkerboard (2026-10-15).
+
+- **GDScript house style, audited.** Tabs, 4-wide. Three-line `##` file header at
+  the top of every `.gd` file; exactly **one** `##` docstring line directly above
+  every func (same indent); single `#` one-liners only inside function bodies;
+  `# -- Section ------` banners at class scope. **Audited by
+  `tools/build_project_map.py`** (ruling 2026-10-16: the linter copied from
+  witchgame now runs here; the "never a linter" clause is superseded). Re-run
+  the audit after every comment edit — it exits 0 and regenerates
+  `docs/PROJECT_MAP.md`, or lists every violation.
 - **Docstrings are the documentation.** Write them dense: what the func does, inputs,
-  return value, invariants the caller must know. Future sessions read them cold.
+  return value, invariants the caller must know. Future sessions read them cold —
+  via docs/PROJECT_MAP.md, which the audit regenerates.

@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://ia6g0ob24dmg"]
+
+[ext_resource type="Script" uid="uid://l1554u1arnb4" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="3_hud"]
+[ext_resource type="Script" path="res://scripts/world/dirt_checker_generator.gd" id="4_gen"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.36, 0.55, 0.8, 1)
+sky_horizon_color = Color(0.66, 0.76, 0.85, 1)
+ground_bottom_color = Color(0.2, 0.17, 0.13, 1)
+ground_horizon_color = Color(0.66, 0.76, 0.85, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+tonemap_mode = 2
+
+[sub_resource type="VoxelGeneratorScript" id="flat_generator"]
+script = ExtResource("4_gen")
+
+[sub_resource type="VoxelBlockyModelEmpty" id="air_model"]
+
+[sub_resource type="StandardMaterial3D" id="terrain_material"]
+vertex_color_use_as_albedo = true
+roughness = 1.0
+
+[sub_resource type="VoxelBlockyModelCube" id="dirt_model"]
+color = Color(0.58, 0.42, 0.29, 1)
+
+[sub_resource type="VoxelBlockyModelCube" id="dirt_model_dark"]
+color = Color(0.33, 0.22, 0.14, 1)
+
+[sub_resource type="VoxelBlockyLibrary" id="blocky_library"]
+models = Array[VoxelBlockyModel]([SubResource("air_model"), SubResource("dirt_model"), SubResource("dirt_model_dark")])
+
+[sub_resource type="VoxelMesherBlocky" id="blocky_mesher"]
+library = SubResource("blocky_library")
+
+[node name="Main" type="Node3D" unique_id=429973751]
+script = ExtResource("1_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1311959430]
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=939512822]
+environment = SubResource("environment")
+
+[node name="Hole" type="VoxelTerrain" parent="." unique_id=1297287148]
+max_view_distance = 256
+material_override = SubResource("terrain_material")
+generator = SubResource("flat_generator")
+mesher = SubResource("blocky_mesher")
+
+[node name="Player" parent="." unique_id=664432597 instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+
+[node name="HUD" parent="." unique_id=329069978 instance=ExtResource("3_hud")]
