@@ -123,7 +123,9 @@ your feet does not pogo you (airborne-sample gate works) ☐ the clang.
 compaction benchmark that the Kiosk's wipe will later make moot — run it anyway; the
 number is a nice thing to know and the habit of measuring is the point.
 **Exit tests:** ☐ dig N spheres, restart, the hole is voxel-identical ☐ replay time
-under 10s for a weekend's worth of dirt ☐ save size is surfaced somewhere (braggable).
+under 10s for a weekend's worth of dirt ☐ ~~save size is surfaced somewhere
+(braggable)~~ — dropped at the 0.0.3 gate (ruling 2026-10-17: the HUD readout was
+already rejected in pt1; nothing surfaces the number — dev_log Addendum 23).
 
 ### v0.0.4 — THE KIOSK
 **Question:** Is there a loop?

@@ -88,6 +88,10 @@ shovel_next={
 ]
 }
 
+[physics]
+
+common/physics_ticks_per_second=125
+
 [rendering]
 
 lights_and_shadows/directional_shadow/size=2048

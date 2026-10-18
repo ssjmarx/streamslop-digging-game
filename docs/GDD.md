@@ -176,10 +176,13 @@ this.
 
 - Kiosk item, $600. Tooltip: "Stopwatch." That is the whole tooltip. No explanation,
   ever.
-- Once purchased it runs from your first swing, forever. No stop button. It resets to
-  00:00.0 on exactly two events: purchase, and every sell. The reset makes no sound.
-- A run: first swing after reset → depth ≤ −100.0m → time submitted. Selling mid-run
-  zeroes the watch; the next swing starts a new run. It doesn't punish; it forgets.
+- Once purchased it runs from the physics frame the player gains control, forever. No
+  stop button. It resets to 00:00.0 on exactly two events: purchase, and every sell.
+  The reset makes no sound.
+- A run: the physics frame control is gained → the physics frame depth ≤ −100.0m →
+  time submitted. Sub-frame display is in physics frames (125 Hz — quake speed).
+  Selling mid-run zeroes the watch; the reload hands control back and the next gain
+  of control starts a new run. It doesn't punish; it forgets.
 - The optimal route falls out immediately: grind → sell freely → upgrade → buy the
   watch → clean run. The community will formalize this in a week; we never confirm it.
 

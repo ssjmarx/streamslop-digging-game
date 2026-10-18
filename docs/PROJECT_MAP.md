@@ -66,7 +66,7 @@ scene sub-resources (runtime assignment raced the scheduler once).
 - `write_floor_blocks(terrain: VoxelTerrain, old_floor: int, new_floor: int) -> void` - Surgical floor-grow: write the newly-dirtied slice as data blocks; the only grow-path that keeps holes (see probe_depth_floor.gd).
 - `_rescue_player(player: CharacterBody3D) -> void` - Void rescue: snap to the nearest surface (never into your own hole), kill velocity, re-run the loading sequence.
 - `_ready() -> void` - Boot: rotate the sun, bake the library, start the loading sequence.
-- `_boot_spawn_sequence(with_replay: bool) -> void` - Boot + loading: spectator frame one; the body exists only after the replay.
+- `_boot_spawn_sequence(with_replay: bool, preserve_camera := false) -> void` - Boot + loading: spectator frame one; the body exists only after the replay.
 - `_unhandled_input(event: InputEvent) -> void` - Any key or click skips the sequence straight to the end state.
 - `_make_spectator(entries: Array[Dictionary]) -> Camera3D` - The opening shot: a camera parked above the hole's centroid, looking down.
 - `_replay_bands(terrain: VoxelTerrain, entries: Array[Dictionary]) -> void` - Visual replay: depth bands dig top-down, floor growing just ahead of the front.

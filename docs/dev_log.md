@@ -599,3 +599,89 @@ assigned first, populated by branches after — never through a ternary. Fix:
 `var entries: Array[Dictionary] = []` + `if with_replay: entries =
 read_entries()`. No other instances of the pattern in the codebase (searched).
 
+**Addendum 23 — the 0.0.3 gate: MEMORY passes.** corey ratified the two open
+rulings and walked the checklist. Compaction: none, forever — the Addendum 14
+benchmark stands as recorded (50k spheres, 7.85 s, 2.4 MB), the jsonl format is
+law (GDD Appendix B), and the Kiosk's wipe makes the question moot. "Save size is
+surfaced somewhere": dropped — the HUD readout was already rejected in pt1,
+nothing surfaces the number, and the §5 exit test is amended at the boundary
+accordingly. The §4 feel checklist passed in full, by hand, at 60 Hz — including
+the two new boxes (mantle, boot). Tagged `v0.0.3` at 06db5f7, annotated in the
+v0.0.1/v0.0.2 style. Export/zip/patch-note ritual pending on corey's machine.
+
+**Addendum 24 — quake speed.** project.godot had no [physics] section: the game
+had been running at Godot's 60 Hz default while the intent was 125. Set
+`physics/common/physics_ticks_per_second=125` and retuned dig.gd's
+`startup_frames` 9 → 19 — the windup was ruled at 60 Hz (9/60 = 150 ms), and
+19/125 ≈ 152 ms preserves it. Everything time-based (0.45 s swing, mantle
+windows, chain grace) is untouched by construction. Lesson: the tickrate intent
+lived in nobody's config; the stopwatch's new sub-frame law (Addendum 25) is
+what surfaced it.
+
+**Addendum 25 — the stopwatch: deferred, and its law rewritten.** All purchases
+are deferred past this patch, stopwatch included — the model stays in
+~/Downloads, unstaged. Verification closed by corey reading the pages directly
+(Pixabay blocks scrapers): febrianes86's stopwatch is Free for use under the
+Pixabay Content License — no attribution required, modify/adapt fine, no
+standalone resale — and the model is a 21,299-vertex GLB with no textures and no
+animations, so it needs a hand-made material when it stages. New timing law,
+ruled into GDD §6e and superseding "runs from your first swing": a run is
+physics frame → physics frame — it starts the frame the player gains control and
+ends the frame depth ≤ −100.0 m, with sub-frame display in physics frames at
+125 Hz. Standard speedrun semantics.
+
+**Addendum 26 — the kiosk interaction bundle.** Rulings for 0.0.4, made
+together. (1) The LMB taxonomy, ratified framing for the One Rule: one button,
+three target-dependent machines — voxel clicks are the digging machinery
+(shipped), interaction clicks are the kiosk's (this patch), melee clicks are a
+future machine; the verb set stays {dig}. (2) Interact is cursor-driven and
+keyless: the crosshair's in-range state (inside DIG_RANGE) is the liveness
+gate — no separate radius concept, E is dead, and the `interact` input action is
+removed at pt2; a live interactable under the cursor eats the click — it
+dispatches and the swing never starts, no whiff, no clang. (3) Shop view:
+controls lock, the camera lerps to a static authored shot, and the cursor
+becomes virtual — the mouse stays captured, deltas drive a clamped screen point,
+and the diegetic billboard stays the only cursor in the world; hover highlights
+inventory via the sight's edge-glow idiom; a SELL DIRT text billboard stands
+over the shopkeeper's head in shop view; Esc exits. (4) The world lip: the dirt
+disc is untouched; the 10 m apron (50→60 m) is a smooth generated ring mesh —
+higher resolution than the voxels, undiggable by construction because it is not
+voxel terrain. (5) All purchases deferred: price popups are display-only, [/]
+stays the tier switcher, SELL DIRT is the only working button. (6) GameState
+becomes the owner of user://hole/state.json at pt3 (dirt, money, tier, PB), the
+stop sign's pose migrating under a reserved key with a compat read.
+
+**Addendum 27 — double digs; the cadence anchors to the strike.** corey saw rare
+double digs after the 125 Hz conversion. Mechanism: `_swing()` armed `_cooldown`
+at click time and counted chain grace from the last click, but the strike landed
+only after the windup — so with corey's tuned windup (~488 ms), follow-up clicks
+in the window between windup-resolve and grace-expiry canceled into an instant
+second strike ~12 ms after the first. The bug predates the conversion (a ~50 ms
+window existed at 60 Hz); the new tickrate widened it. Fix: the cadence and the
+grace both anchor to the strike — `_resolve_swing()` now re-arms `_cooldown` and
+stamps `_last_strike_msec`; `_swing()` no longer arms anything. Strikes are
+always ≥ 0.45 s apart (double digs structurally impossible), spam-clicking still
+cancels the windup but can never skip cadence, and hold-to-chain still lands
+strikes at the frozen 0.45 s. Also: Addendum 24's "~150 ms preserved"
+reconstruction was wrong — corey had hand-tuned the windup in the scene to 30
+frames at 60 Hz (~500 ms); the honest 125 Hz value is 61 frames (~488 ms), now
+the code default (the scene override made 19 dead code). And the rescue path no
+longer forces first person: `_boot_spawn_sequence` takes `preserve_camera`, so
+being rescued in third person returns you in third person.
+
+**Addendum 28 — the double-dig fix, take two: revert, then a dead-simple strike
+gap.** The Addendum 27 strike-anchored cadence was wrong twice over. It silently
+ate timed inputs inside a 0.45 s dead zone — a windup-paid strike lands ~0.49 s
+after its click, so dig-jump rhythm clicks landed inside the zone and vanished —
+and corey ruled the design point outright: a shovel jump does NOT get the
+windup cancel; the cancel exists for the spam rhythm only, and paying the
+windup is the skill. Machinery reverted to the simple click-anchored form
+(cooldown at click, grace from the last click, windup cancel untouched). Double
+digs are now prevented by one guard in `_resolve_swing()`: a resolution
+arriving less than `min_strike_gap_frames` (56, ~0.45 s at 125 Hz) after the
+last landed strike is held in the existing pending countdown until the gap is
+paid. Strikes land ≥ ~0.45 s apart, no input is ever lost, windup-paid timed
+clicks clear the gap naturally, and shovel jumping is untouched. Lesson: when a
+guard breaks the thing it protects, the fix is not a smarter guard — it is the
+dumbest guard that cannot break it.
+

@@ -73,7 +73,7 @@ static func write_floor_blocks(terrain: VoxelTerrain, old_floor: int, new_floor:
 func _rescue_player(player: CharacterBody3D) -> void:
 	player.velocity = Vector3.ZERO
 	player.global_position = _find_surface_spawn($Hole as VoxelTerrain)
-	_boot_spawn_sequence(false)
+	_boot_spawn_sequence(false, true)
 
 
 ## Boot: rotate the sun, bake the library, start the loading sequence.
@@ -87,7 +87,7 @@ func _ready() -> void:
 
 
 ## Boot + loading: spectator frame one; the body exists only after the replay.
-func _boot_spawn_sequence(with_replay: bool) -> void:
+func _boot_spawn_sequence(with_replay: bool, preserve_camera := false) -> void:
 	var terrain := $Hole as VoxelTerrain
 	var player := $Player
 	player.set_physics_process(false)
@@ -119,7 +119,7 @@ func _boot_spawn_sequence(with_replay: bool) -> void:
 		spec.queue_free()
 		($HUD as CanvasLayer).set_loading(false)
 		_sequence_active = false
-	player.set_camera_mode(false)   # step 6: FPV, controls live (every path lands here)
+	player.set_camera_mode(player.third_person if preserve_camera else false)   # step 6: boot lands FPV; a rescue keeps the mode it caught you in
 	player.on_ground_ready()
 
 

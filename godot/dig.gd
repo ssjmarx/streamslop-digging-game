@@ -16,13 +16,19 @@ const CHAIN_GRACE := 0.1   # seconds beyond the cooldown that still count as spa
 @export var knock_power := 50.0
 ## Physics frames between the FIRST click of a chain and its strike; follow-ups
 ## cancel into each other instantly. Fighting-game startup (ruling 2026-10-17).
-@export var startup_frames := 9
+## corey's hand-tuned windup: 30 @ 60 Hz (~500 ms) carried to 61 @ 125 Hz (~488 ms)
+## -- Addendum 24's ~150 ms reconstruction used the untuned default; it was wrong.
+@export var startup_frames := 61
+## Minimum physics frames between landed strikes; a tap inside the gap holds until
+## it is paid. The double-dig fix -- nothing else changes (Addendum 28).
+@export var min_strike_gap_frames := 56   # ~0.45 s at 125 Hz
 
 # -- State ------
 
 var _cooldown := 0.0
-var _pending_frames := -1   # >=0: physics frames left before a chain's first strike resolves
+var _pending_frames := -1   # >=0: physics frames left before a held swing resolves (windup or strike gap)
 var _last_swing_msec := -100000   # far past: the session's first click pays startup
+var _last_strike_frame := -100000   # the last landed resolution, in physics frames (the double-dig guard)
 
 @onready var _body: Node = get_parent()   # the player CharacterBody3D; duck-typed on purpose
 @onready var _aim: Node = $Aim   # the sight: one ray shared by the swing and the instruments
@@ -66,6 +72,12 @@ func _swing() -> void:
 
 ## The strike itself: ONE sight query, first hit wins -- the DigAuthority shape.
 func _resolve_swing() -> void:
+	var frame := int(Engine.get_physics_frames())
+	var since_last := frame - _last_strike_frame
+	if since_last < min_strike_gap_frames:
+		_pending_frames = min_strike_gap_frames - since_last   # hold the tap: the gap is paid first (Addendum 28)
+		return
+	_last_strike_frame = frame
 	var hit: Dictionary = _aim.swing_query(DIG_RANGE)
 	if hit.is_empty():
 		_whiff.play()
