@@ -1,9 +1,15 @@
 [gd_scene format=3 uid="uid://ia6g0ob24dmg"]
 
 [ext_resource type="Script" uid="uid://l1554u1arnb4" path="res://scripts/main.gd" id="1_main"]
-[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://cou03cf37jit0" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="3_hud"]
-[ext_resource type="Script" path="res://scripts/world/dirt_checker_generator.gd" id="4_gen"]
+[ext_resource type="Script" uid="uid://ck815js55kwvq" path="res://scripts/world/dirt_checker_generator.gd" id="4_gen"]
+[ext_resource type="Script" uid="uid://dt66u5224o8wt" path="res://scripts/world/stop_sign.gd" id="5_sign"]
+[ext_resource type="Script" uid="uid://83r0m57egu0x" path="res://scripts/world/bgm.gd" id="6_bgm"]
+[ext_resource type="Script" uid="uid://bxhnjdm4bm3eb" path="res://scripts/hole/diglog_writer.gd" id="7_diglog"]
+[ext_resource type="AudioStream" uid="uid://kns7u8cdoudc" path="res://assets/music/pixabay/melodigne-exploration-310024.mp3" id="8_music"]
+[ext_resource type="ArrayMesh" uid="uid://csbk3qoftxxsq" path="res://assets/meshes/quaternius/street/Sign_Stop.obj" id="9_signmesh"]
+[ext_resource type="Script" path="res://scripts/world/ambience.gd" id="10_amb"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.36, 0.55, 0.8, 1)
@@ -19,14 +25,13 @@ background_mode = 2
 sky = SubResource("sky")
 tonemap_mode = 2
 
+[sub_resource type="StandardMaterial3D" id="terrain_material"]
+vertex_color_use_as_albedo = true
+
 [sub_resource type="VoxelGeneratorScript" id="flat_generator"]
 script = ExtResource("4_gen")
 
 [sub_resource type="VoxelBlockyModelEmpty" id="air_model"]
-
-[sub_resource type="StandardMaterial3D" id="terrain_material"]
-vertex_color_use_as_albedo = true
-roughness = 1.0
 
 [sub_resource type="VoxelBlockyModelCube" id="dirt_model"]
 color = Color(0.58, 0.42, 0.29, 1)
@@ -34,8 +39,11 @@ color = Color(0.58, 0.42, 0.29, 1)
 [sub_resource type="VoxelBlockyModelCube" id="dirt_model_dark"]
 color = Color(0.33, 0.22, 0.14, 1)
 
+[sub_resource type="VoxelBlockyModelCube" id="bedrock_model"]
+color = Color(0.16, 0.16, 0.18, 1)
+
 [sub_resource type="VoxelBlockyLibrary" id="blocky_library"]
-models = Array[VoxelBlockyModel]([SubResource("air_model"), SubResource("dirt_model"), SubResource("dirt_model_dark")])
+models = Array[VoxelBlockyModel]([SubResource("air_model"), SubResource("dirt_model"), SubResource("dirt_model_dark"), SubResource("bedrock_model")])
 
 [sub_resource type="VoxelMesherBlocky" id="blocky_mesher"]
 library = SubResource("blocky_library")
@@ -50,7 +58,7 @@ shadow_enabled = true
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=939512822]
 environment = SubResource("environment")
 
-[node name="Hole" type="VoxelTerrain" parent="." unique_id=1297287148]
+[node name="Hole" type="VoxelTerrain" parent="." unique_id=1297287148 groups=["terrain"]]
 max_view_distance = 256
 material_override = SubResource("terrain_material")
 generator = SubResource("flat_generator")
@@ -58,5 +66,28 @@ mesher = SubResource("blocky_mesher")
 
 [node name="Player" parent="." unique_id=664432597 instance=ExtResource("2_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+run_anim_ref_speed = 6.0
+run_anim_ref_scale = 1.0
+walk_anim_ref_speed = 1.0
+crouch_anim_ref_speed = 0.75
+crouch_anim_ref_scale = 1.0
 
 [node name="HUD" parent="." unique_id=329069978 instance=ExtResource("3_hud")]
+
+[node name="StopSign" type="RigidBody3D" parent="." unique_id=120792277]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 0)
+mass = 5.0
+script = ExtResource("5_sign")
+
+[node name="Mesh" type="MeshInstance3D" parent="StopSign" unique_id=769277242]
+mesh = ExtResource("9_signmesh")
+
+[node name="BGM" type="AudioStreamPlayer" parent="." unique_id=1994821675]
+stream = ExtResource("8_music")
+script = ExtResource("6_bgm")
+
+[node name="Diglog" type="Node" parent="." unique_id=949684743]
+script = ExtResource("7_diglog")
+
+[node name="Ambience" type="Node3D" parent="."]
+script = ExtResource("10_amb")

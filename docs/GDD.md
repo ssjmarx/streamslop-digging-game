@@ -1,6 +1,6 @@
 # streamslop digging game — Game Design Document
 
-**Engine:** Godot 4.7.x (local install: 4.7.2 via Godots) · **Team:** dave ·
+**Engine:** Godot 4.7.x (local install: 4.7.2 via Godots) · **Team:** corey ·
 **Status:** This document is accurate. Parts of it are aspirational. Those parts are
 marked Q3.
 **Provenance:** consolidated 2026-10-15 from the founding design conversation (now
@@ -29,7 +29,7 @@ never change is the player-facing experience:
 - Nothing ever happens in the hole.
 - The clang.
 
-Enforcement: dave's conscience. CI enforces only attribution (§7) — the credits matter
+Enforcement: corey's conscience. CI enforces only attribution (§7) — the credits matter
 more than the mechanic; this was always true of the genre.
 
 The corollary: every future system integrates with digging by *reading* DirtBus, never
@@ -51,7 +51,7 @@ LMB → erase voxel sphere → +dirt → walk to kiosk → sell → buy a wider 
 | 0    | Plastic Toy Shovel | 1.3    | 0.45s | —      | beach-grade               |
 | 1    | Garden Trowel      | 1.7    | 0.45s | 250    | insulting upgrade         |
 | 2    | Pro Shovel 3000    | 2.3    | 0.45s | 2,000  | "Pro"                     |
-| 3    | Golden Shovel      | 2.3    | 0.45s | 25,000 | same stats. gold. sparkle. |
+| 3    | Ergonomic Shovel   | 2.3    | 0.45s | 25,000 | same stats. ergonomic. |
 
 ## §4 The Hole (invariants)
 
@@ -66,6 +66,11 @@ LMB → erase voxel sphere → +dirt → walk to kiosk → sell → buy a wider 
   is the only quiet place in the game. People dig for the peace. The community-voted
   Steam tag becomes "Cozy."
 - There is never a waypoint at the hole. Nearest: "Hole Overlook — 900m."
+- The disc wears an undiggable black rim wall — one voxel at its edge, top to
+  bottom. It clangs (the stop-sign clang) and takes shovel jumps, but never yields:
+  the world keeps its skin.
+- Off the rim there is no floor and nothing generates; fall ~20m and the void
+  rescue picks you up. The floor grows only under the disc.
 - The hole is excluded from the streaming system — fully resident in memory at any
   depth. It owns its own chunk column. Two streaming philosophies coexist and are
   never reconciled.
@@ -73,7 +78,9 @@ LMB → erase voxel sphere → +dirt → walk to kiosk → sell → buy a wider 
 
 ## §5 Movement
 
-- Walk / sprint / crouch (hold) / jump.
+- Run is the default — full Q3 speed (10.3 m/s, g_speed 320u under our mapping).
+  Walk is held (V, 1.288 m/s — stealth and roleplay). Crouch (hold, 0.966) / jump.
+  Animation cadence follows velocity dynamically (2026-10-17).
 - First/third-person camera toggle (P). The body stays visible in both modes: in
   first person the camera rides just forward of the face and the body stays
   view-aligned (human ruling 2026-10-15 — supersedes the v0.1 hide-the-body choice);
@@ -89,7 +96,11 @@ LMB → erase voxel sphere → +dirt → walk to kiosk → sell → buy a wider 
 
 ## §6 Launch features
 
-The launch build is a hole, a wardrobe, and a phone call. Three pillars, zero content.
+The launch build is a hole, a wardrobe, a phone call — and a giant co-op Quake 3
+level: the unrelated thing you can go do instead, which is what makes the digging
+the joke. Initial Steam release: 0.3.0 (human ruling 2026-10-17), the first version
+where the joke is legible. The $5 pitch verbatim: "a game where you can dig the
+ground but also it's a giant co-op quake 3 level."
 
 ### §6a Co-op
 
@@ -110,7 +121,7 @@ The launch build is a hole, a wardrobe, and a phone call. Three pillars, zero co
 - The game opens on character select: six avatars, one Quaternius pack, one rig.
   Left/right arrows, rotating pedestal, name entry, RANDOMIZE, LOCK IN.
 - Roster: Adventurer, Knight, Robot, Bandit, Zombie Businessman, and Shovelhead — the
-  one original asset in the entire game ("dave", all rights reserved).
+  one original asset in the entire game ("corey", all rights reserved).
 - Change your avatar later at the sign ("the mirror is at the sign" — sole dev
   comment on the matter).
 - Local modding from day one: a folder in `user://avatars/` with `model.gltf`,
@@ -120,7 +131,7 @@ The launch build is a hole, a wardrobe, and a phone call. Three pillars, zero co
   the same rule as the dev.
 - Character select is a credits gallery — browsing fires each avatar's lower third.
   The game's first room is its own attribution menu. In a lobby: four pedestals.
-- Steam Workshop sharing ships in 0.1.0 (ROADMAP; moved from Update 1).
+- Steam Workshop sharing ships at launch (0.3.0; ROADMAP).
 
 ### §6c The Kiosk (the shopkeeper)
 
@@ -169,7 +180,9 @@ this.
 - Controls are My-Summer-Car: sit, then click and drag six individual levers —
   throttle, slew, boom, stick, bucket, stabilizers. No tutorial; the tutorial is the
   tip. Scoop without stabilizers and it tips; tipped is forever (the second frozen
-  rule — no untip, ever; it becomes a lawn ornament).
+  rule — no untip, ever; it becomes a lawn ornament). It drives at the old sacred
+  crouch speed (2.5 m/s — the player's stealth crouch is now 0.966, ruling
+  2026-10-17): one full hour.
 - Each scoop is just a big `DigAuthority.strike()` — dirt to the counter, never
   inventory. It can dig the hole from the rim, within arm's reach, or dig its own
   ramp down and never leave. The backhoe is not an event; it is furniture.
@@ -226,8 +239,9 @@ One clang (dig), one whiff (miss), one footstep set, one wind loop.
   forever.
 - The footstep set will be used for every surface in every future update. We are not
   making new footsteps.
-- Below the rim: silence and the clang. The hole is the quietest place in the game.
-  This is the intended experience and, eventually, the reason people dig.
+- Below the rim: the music muffles by the dirt still overhead — a low pass paid in
+  occlusion, not depth — and the clang rides clear. Dig the sky back and the music
+  returns (ruling 2026-10-17, amending the old silence-and-the-clang).
 
 ## §9 Memory & The Surrender
 
@@ -281,6 +295,10 @@ Last bullet: honest for exactly one build. Screenshot it.
   risk: verify generator property names, `do_sphere` semantics, raycast result
   fields, and every Steam call signature against the pinned versions — trust only
   their docs. Later updates add one addon per patch, as is tradition.
+- Every tunable is an `@export` under a named export group — the inspector (and the
+  editor's Remote tab, for live tweaks) is the tuning surface (ruling 2026-10-17).
+  Law-locked numbers stay consts and are never exported: the 0.45s swing, DIG_RANGE,
+  the tier table, MODEL_YAW, the rim (y=0).
 - Project root: `godot/` (`res://` is godot/'s root). `dig.gd` lives at the project
   root, where everyone can see it. Repo-level docs and tooling live at the repo
   root. Two roots, on purpose.
@@ -358,7 +376,8 @@ the pinned godot_voxel/GodotSteam versions at build time (§13).
 
 The FEEL is frozen (§2). The file may be touched. The verb may not grow.
 
-- `DIG_RANGE := 10.0`, `SWING_COOLDOWN := 0.45` (constant; forever; §3).
+- `DIG_RANGE := 5.0`, `SWING_COOLDOWN := 0.45` (constant; forever; §3 — range 10→5 by
+  ruling 2026-10-17).
 - Exports: `terrain: VoxelTerrain`, `viewmodel: AnimationPlayer` (cosmetic only),
   `clang: AudioStreamPlayer3D`.
 - Swing: raycast from the camera; miss → play "whiff"; hit → play "dig", `clang.play()`,

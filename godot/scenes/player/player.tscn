@@ -1,6 +1,11 @@
 [gd_scene format=3 uid="uid://cou03cf37jit0"]
 
 [ext_resource type="Script" uid="uid://rc7dtwx72ny" path="res://scripts/player_controller.gd" id="1_player"]
+[ext_resource type="Script" uid="uid://dbisvohqgdh0i" path="res://dig.gd" id="2_dig"]
+[ext_resource type="AudioStream" uid="uid://jfjp737pslrj" path="res://assets/sfx/kenney/impactMetal_heavy_000.ogg" id="3_clang"]
+[ext_resource type="AudioStream" uid="uid://df8uicgbskmow" path="res://assets/sfx/kenney/impactSoft_heavy_000.ogg" id="4_digsfx"]
+[ext_resource type="AudioStream" uid="uid://d3fhm6tend6yc" path="res://assets/sfx/kenney/impactSoft_medium_000.ogg" id="5_whiff"]
+[ext_resource type="Script" uid="uid://dlwqdknvomr4g" path="res://scripts/player/aim.gd" id="6_aim"]
 
 [sub_resource type="CapsuleShape3D" id="capsule_shape"]
 radius = 0.35
@@ -13,6 +18,9 @@ height = 1.8
 [node name="Player" type="CharacterBody3D" unique_id=488565832]
 collision_layer = 2
 script = ExtResource("1_player")
+fp_near_plane = 0.05
+shovel_offset = Vector3(-0.03, 0.07, 0.12)
+shovel_rot_deg = Vector3(-97.315, 0, -6.85)
 
 [node name="Collision" type="CollisionShape3D" parent="." unique_id=146152434]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -45,3 +53,24 @@ fov = 90.0
 
 [node name="VoxelViewer" type="VoxelViewer" parent="." unique_id=12735774]
 view_distance = 256
+
+[node name="Dig" type="Node3D" parent="." unique_id=372828847]
+script = ExtResource("2_dig")
+startup_frames = 30
+
+[node name="Aim" type="Node3D" parent="Dig" unique_id=430632775]
+script = ExtResource("6_aim")
+
+[node name="Crosshair" type="Sprite3D" parent="Dig/Aim" unique_id=137531996]
+billboard = 1
+
+[node name="Preview" type="MultiMeshInstance3D" parent="Dig/Aim" unique_id=520745240]
+
+[node name="Clang" type="AudioStreamPlayer3D" parent="Dig" unique_id=49245306]
+stream = ExtResource("3_clang")
+
+[node name="HitDig" type="AudioStreamPlayer" parent="Dig" unique_id=727751378]
+stream = ExtResource("4_digsfx")
+
+[node name="Whiff" type="AudioStreamPlayer" parent="Dig" unique_id=457211006]
+stream = ExtResource("5_whiff")

@@ -1,6 +1,6 @@
 # instructions.md — Agent Rules for streamslop digging game
 
-**streamslop digging game is a human-directed project. The human owner (dave) leads and
+**streamslop digging game is a human-directed project. The human owner (corey) leads and
 reviews; the AI agent (Cline, in VS Code) implements. These rules are non-negotiable
 guardrails. Read this file before doing anything.**
 
@@ -125,3 +125,21 @@ gate, and a failed checkbox blocks the tag. Do not build test infrastructure. Do
 - **Docstrings are the documentation.** Write them dense: what the func does, inputs,
   return value, invariants the caller must know. Future sessions read them cold —
   via docs/PROJECT_MAP.md, which the audit regenerates.
+- **Tunables are exports.** Every dial a human tunes by eye ships as an `@export`
+  under a named `@export_group` — the inspector is the tuning surface; the editor's
+  Remote tab tweaks live (copy values back before quitting). Law-locked numbers stay
+  `const` and are never exported (GDD §13, ruling 2026-10-17).
+- **MultiMesh instance transforms are node-local.** A preview multimesh parented
+  under a moving node (the player) draws its instances in that node's space and
+  drifts with every step — mark the node `top_level = true` (or write transforms
+  relative to it). Found 2026-10-17: the dig glow rode the player while the
+  crosshair and the hole stayed world-correct. A preview must also recompute
+  every frame — a cached targeting array lied by up to a cell of aim drift
+  (2026-10-17).
+- **`do_sphere` samples voxel lattice points, not cell volumes.** A voxel at
+  integer (x,y,z) tests as its corner, not its center — so a sphere centered on
+  a ray hit erases a half-cell-diagonal-offset set whose size varies with where
+  the hit lands inside a cell (probe-verified 2026-10-17: corner-sampling 8/8,
+  center-sampling 4/7). The strike passes center + 0.5 so holes center on the
+  aim and match the center-sampled glow preview exactly; the diglog replay must
+  apply the same shift (diglog_writer.gd).

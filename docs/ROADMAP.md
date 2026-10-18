@@ -1,6 +1,6 @@
 # docs/ROADMAP.md — Internal Development Roadmap
 
-**Project:** streamslop digging game · **Author:** dave · **Reviewer:** dave (deferred)
+**Project:** streamslop digging game · **Author:** corey · **Reviewer:** corey (deferred)
 **Status:** living document. Amend only at milestone boundaries.
 **Dates:** none. Estimates are in weekends. If anyone asks when something ships: Q3.
 
@@ -8,7 +8,7 @@
 
 - Milestones are gates, not dates. Each retires a specific risk, phrased as a question.
   We do not start the next milestone until the current one passes its exit test.
-- Every milestone ends in a tagged, exported, playable build — someone who is not dave
+- Every milestone ends in a tagged, exported, playable build — someone who is not corey
   must be able to unzip it and run the exit test in under 15 minutes. The game is
   shippable-to-a-friend at every tag. (The one piece of real discipline in the project.
   It exists so that when motivation dips, "the last playable" is never far behind us.)
@@ -23,7 +23,12 @@
 ## §2 Versioning policy
 
 - 0.0.x — internal testable milestones. Never leave the shared folder.
-- 0.1.0 — Early Access launch. The build the store page points at.
+- 0.3.0 — initial Steam release ($5). The build the store page points at, and the
+  first version where the joke is legible: a digging game with something entirely
+  unrelated you can go do instead — "a game where you can dig the ground but also
+  it's a giant co-op quake 3 level" (human ruling 2026-10-17).
+- 0.1.0–0.2.x — the slope between the phone call and the joke; not yet carved. The
+  ladder between them is drafted at the 0.1.0 gate, by the human, out loud.
 - Version bumps only at gates. No mid-milestone version numbers. The version number is
   a promise about testability, not a timestamp.
 
@@ -41,15 +46,19 @@
 | 0.0.8   | THE FOLDER     | Can a stranger's guy appear without code?                  |
 | 0.0.9   | THE SEAM       | Can two people dig one hole? (backhoe replication too)     |
 | 0.0.10  | THE PHONE CALL | Can a stranger join without talking to us?                 |
-| 0.1.0   | THE LAUNCH     | Is it streamslop?                                          |
+| 0.3.0   | THE RELEASE    | Is the joke legible? (dig + a giant co-op quake 3 level)   |
+
+0.1.0–0.2.9 are not carved into milestones yet; the ladder between the phone call and
+the release is drafted at the 0.1.0 gate (ruling 2026-10-17: the launch moved here
+from 0.1.0).
 
 Dependency chain (nothing starts before its parents pass):
 
-    DIRT ──► THE VERB ──► MEMORY ──► THE KIOSK ──────────────────────► THE LAUNCH
+    DIRT ──► THE VERB ──► MEMORY ──► THE KIOSK ──────────────────────► THE RELEASE
                  │                    │
                  │                    └──► THE MACHINE ──► THE SEAM ──┤
                  │                                                    ▼
-                 └──► CREDITS ──► THE WARDROBE ──► THE FOLDER ──► THE SEAM ──► THE PHONE CALL ──► THE LAUNCH
+                 └──► CREDITS ──► THE WARDROBE ──► THE FOLDER ──► THE SEAM ──► THE PHONE CALL ──► THE RELEASE
 
 ## §4 The feel checklist (run at every gate, 2 minutes, by hand)
 
@@ -75,7 +84,7 @@ Additions (0.0.4+):
 - ☐ Nine handles exist; daily resets at 00:00 UTC; nobody explains this.
 - ☐ The curve admits it's approximate.
 
-A failed checkbox blocks the tag. No exceptions, including for dave.
+A failed checkbox blocks the tag. No exceptions, including for corey.
 
 ## §5 The milestones
 
@@ -87,7 +96,8 @@ yet: THE VERB is next. This milestone also settles the addon pins: godot_voxel a
 GodotSteam builds matching Godot 4.7.x, verified in a blank project before anything
 else (ROADMAP §6, risk #1).
 **Exit tests:** ☐ spawn on a flat voxel plain, run the Ladder in under 15 min from a
-cold unzip ☐ walk / sprint / crouch / jump all work ☐ camera toggle V works ☐ the
+cold unzip ☐ walk / sprint / crouch / jump all work ☐ camera toggle P works (the
+toggle moved V→P by ruling 2026-10-15; this text was amended at the 0.0.2 boundary) ☐ the
 plain streams with no visible hitch ☐ the feel checklist's "depth" box passes vacuously
 (meter exists, reads 0.0).
 
@@ -97,7 +107,7 @@ plain streams with no visible hitch ☐ the feel checklist's "depth" box passes 
 the clang, the whiff, depth reporting over DirtBus. The diglog begins. Dig-jump ships
 here. The sign (THE HOLE) may stand.
 **Exit tests:** ☐ digging is fun for ten straight minutes — the only subjective gate;
-dave decides ☐ swing interval holds 0.45s ±0.05s under load ☐ tiers widen only (tier
+corey decides ☐ swing interval holds 0.45s ±0.05s under load ☐ tiers widen only (tier
 table live, price check) ☐ jump-spam out of a 5m hole unaided ☐ flight bounded by dirt
 (can't ascend the hole's open air column — only along walls) ☐ ground-digging beneath
 your feet does not pogo you (airborne-sample gate works) ☐ the clang.
@@ -119,7 +129,7 @@ depth tracked locally — submission is 0.0.10's problem.
 **Exit tests:** ☐ sell → `diglog.jsonl` gone from `user://` ☐ terrain spot-checks
 byte-match a fresh generator ☐ PB depth survives in `state.json` — verify the
 sanctuary is real ☐ pour lifts a standing player from −20m to the rim (the waiter) ☐
-pour rate outruns golden-shovel dig rate — verify once, never tune ☐ stopwatch zeroes
+pour rate outruns ergonomic-shovel dig rate — verify once, never tune ☐ stopwatch zeroes
 on sell, silently ☐ volume empty state reads "You have no hole." ☐ relaunch after
 sell loads instantly ☐ sell → hole restores voxel-exact at 5 spot-checks ☐ snow shovel
 purchasable, equippable, useless — uselessness verified, because a scam you don't
@@ -191,11 +201,16 @@ GodotSteam build before net_session touches them.
 handles exist on a real app build ☐ daily resets at 00:00 UTC, unexplained ☐ the
 curve admits it's approximate ☐ guests feed the host's boards.
 
-### v0.1.0 — THE LAUNCH
-**Question:** Is it streamslop?
-**Scope:** store page live ("We are focusing on digging." — screenshot it; honest for
-exactly one build), Workshop sharing moves into launch, curve polish, the empty
-state, store bullet "Three leaderboards. Nine leaderboards."
+### v0.3.0 — THE RELEASE (the launch moved here from 0.1.0, ruling 2026-10-17)
+**Question:** Is the joke legible — a digging game with something entirely unrelated
+you can go do instead?
+**Scope:** everything this section carried as v0.1.0 THE LAUNCH: store page live
+("We are focusing on digging." — screenshot it; honest for exactly one build),
+Workshop sharing ships at launch, curve polish, the empty state, store bullet "Three
+leaderboards. Nine leaderboards." — plus the unrelated thing that makes the joke
+legible: the giant co-op quake 3 level (the initial $5 ask). Milestones 0.1.0–0.2.9
+are not carved yet; the ladder from the phone call to the release is drafted at the
+0.1.0 gate.
 **Exit test:** ☐ the feel checklist, in full, passes on the store build. The game is
 complete. This statement becomes false at Update 1 and is never true again.
 

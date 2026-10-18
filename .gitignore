@@ -5,3 +5,7 @@
 # Exported builds (the build ritual drops zips here; they live on the
 # shared folder, not in history)
 dist/
+
+# Unimplemented asset staging (full packs, licenses, attribution; assets
+# graduate into godot/assets/ + catalog.json when implemented)
+assets_unimplemented/
