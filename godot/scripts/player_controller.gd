@@ -18,6 +18,20 @@ extends CharacterBody3D
 ## The player's stealth crouch. The backhoe keeps the old sacred 2.5 (ruling 2026-10-17).
 @export var crouch_speed := 0.966
 
+@export_group("Auto Mantle")
+## 1-voxel lips never dead-stop a runner (quake step-slide; ROADMAP §4 box).
+@export var mantle_enabled := true
+## Base step search height: Quake's pm_stepsize (18u x 0.0321 m/u).
+@export var mantle_step_height := 0.58
+## Step search height while the chain window is open (just over a voxel).
+@export var mantle_chain_step_height := 1.05
+## Seconds the chain window stays open after a step (staircase chaining).
+@export var mantle_chain_window := 0.3
+## Seconds the lens takes to catch up to a stepped body (0 = instant pop).
+@export var mantle_cam_smoothing := 0.1
+## Print each accepted mantle while tuning (staircases will spam).
+@export var mantle_debug := false
+
 @export_group("Anim Calibration")
 ## Jog_Fwd reads correct at this scale at this speed (eye-tuned 2026-10-17).
 @export var run_anim_ref_speed := 10.3
@@ -191,6 +205,8 @@ var _hair_pieces: Array[Node] = []   # attached hair pieces; hidden by the FP he
 var _outfit_meshes: Array[MeshInstance3D] = []   # worn outfit meshes; posed by the live dials
 var _cull_bodies: Array[MeshInstance3D] = []   # cullable body meshes (avatar + ghost), by BODY_MESH_NODES
 var _body_originals := {}   # body MeshInstance3D -> its unculled source mesh (the restore path)
+var _mantle_chain_until_msec := 0   # while set, the step search height is the chain boost
+var _mantle_cam_drop := 0.0   # lens catch-up debt after a mantle teleport (meters)
 var _eyebrows: MeshInstance3D   # the built-in Eyebrows mesh; hidden by the FP head tuck
 var _skeleton: Skeleton3D   # the avatar's skeleton, cached at load
 var _head_idx := -1   # the Head bone index; -1 until the avatar loads
@@ -208,20 +224,36 @@ var _avatar_meshes: Array[MeshInstance3D] = []   # the real avatar's meshes; cas
 @onready var collider: CollisionShape3D = $Collision
 
 
-## Boot: capture base offset, camera modes, avatar + hair; loader holds physics.
+## Boot: mouse capture and dials only; the loader spawns the avatar (spawn_avatar).
 func _ready() -> void:
 	add_to_group("player")   # the HUD reads us by group; nothing set this before 0.0.2 (depth was pinned at 0.0)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	boom.add_excluded_object(get_rid())
 	_apply_fp_near_plane()
-	_apply_camera_mode()
-	_load_avatar()
+	if mantle_enabled:
+		print("player: auto mantle on (step %.2fm, chain %.2fm x %.1fs, gate > walk)" % [
+			mantle_step_height, mantle_chain_step_height, mantle_chain_window])
 	set_physics_process(false)   # main.gd's loader re-enables us (dev_log #1)
 
 
 ## Loader handshake: the spawn column is meshed -- physics goes live.
 func on_ground_ready() -> void:
 	set_physics_process(true)
+
+
+## Loader handshake 2: build the avatar hidden, let Idle land, then reveal.
+func spawn_avatar() -> void:
+	# Never exists during the replay; no-op when already spawned (rescue path).
+	if _skeleton != null:
+		return
+	mesh_root.visible = false
+	_load_avatar()
+	if _skeleton == null:
+		mesh_root.visible = true   # load failed: the capsule placeholder must show
+		return
+	const REVEAL_FADE_LAND := 0.2   # just past ANIM_FADE: the reveal frame is fully Idle
+	await get_tree().create_timer(REVEAL_FADE_LAND).timeout
+	mesh_root.visible = true
 
 
 ## Mouse + action routing: rig yaw, both-camera pitch, P flip, wheel zoom, Esc.
@@ -258,13 +290,65 @@ func _physics_process(delta: float) -> void:
 	var dir := (rig.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	velocity.x = dir.x * speed
 	velocity.z = dir.z * speed
+	var intended := Vector3(velocity.x, 0.0, velocity.z)   # pre-slide intent: the slide mangles velocity
 	move_and_slide()
 	if is_on_floor():
 		jumped = false   # landing disarms; only real jumps (space, dig-jump) arm it
+	_try_mantle(delta, intended)
+	_apply_mantle_cam(delta)
 	_update_facing(dir, delta)
 	_update_fp_arm()
 	_mirror_ghost_skeleton()
 	_update_animation(dir.length_squared() > 0.01)
+
+
+## Quake step-slide: every wall bump above walk speed gets the mantle check.
+func _try_mantle(delta: float, intended: Vector3) -> void:
+	# Gate on PRE-slide intent; the slide mangles velocity (Addendum 19).
+	if not mantle_enabled or not is_on_wall():
+		return
+	if Vector2(intended.x, intended.z).length() <= walk_speed:
+		return   # at or below walk speed walls still stop you (deliberate blocking)
+	var chain := Time.get_ticks_msec() < _mantle_chain_until_msec
+	var step_h := mantle_chain_step_height if chain else mantle_step_height
+	var motion := intended * delta
+	var start := global_transform
+	var params := PhysicsTestMotionParameters3D.new()
+	var result := PhysicsTestMotionResult3D.new()
+	# Sweep 1, raised: the step top must leave the intended move fully unblocked.
+	params.from = start.translated(Vector3.UP * step_h)
+	params.motion = motion
+	if PhysicsServer3D.body_test_motion(get_rid(), params, result):
+		return   # still blocked up there: a taller wall, or a ceiling
+	var landed := params.from
+	landed.origin += result.get_travel()
+	# Sweep 2: straight down -- the surface under us must be within step range.
+	params.from = landed
+	params.motion = Vector3.DOWN * (step_h + 0.02)
+	if not PhysicsServer3D.body_test_motion(get_rid(), params, result):
+		return   # open air below: a gap, not a step
+	landed.origin += result.get_travel() + Vector3.UP * 0.001
+	var lift := landed.origin.y - start.origin.y
+	if lift <= 0.01:
+		return   # same-height ground (wall-parallel graze): not a step
+	_mantle_cam_drop += lift
+	global_position = landed.origin
+	velocity.y = maxf(velocity.y, 0.0)
+	_mantle_chain_until_msec = Time.get_ticks_msec() + int(mantle_chain_window * 1000.0)
+	if mantle_debug:
+		print("mantle: +%.2fm %s" % [lift, "chain" if chain else "base"])
+
+
+## The lens catches up to the stepped body: exponential decay of the drop debt.
+func _apply_mantle_cam(delta: float) -> void:
+	if _mantle_cam_drop != 0.0:
+		if mantle_cam_smoothing > 0.0:
+			_mantle_cam_drop *= exp(-delta / mantle_cam_smoothing)
+			if absf(_mantle_cam_drop) < 0.001:
+				_mantle_cam_drop = 0.0
+		else:
+			_mantle_cam_drop = 0.0
+	rig.position.y = -_mantle_cam_drop
 
 
 ## Body facing: TP faces movement (atan2(-x,-z); unnegated = backwards), FP faces the rig; lerped.

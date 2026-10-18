@@ -43,8 +43,16 @@ LMB → erase voxel sphere → +dirt → walk to kiosk → sell → buy a wider 
   sphere radius only. Depth is infinite. Width is purchasable.
 - Sell price: 1 dirt = $1. This number will be regretted in a later update.
 - Dig-jump (ships 0.0.2): swinging while airborne and hitting dirt grants upward
-  velocity. The only air control in the game is a shovel. Flight is bounded by dirt —
+  velocity. The only player-driven air control in the game is a shovel; terrain
+  may step a fast-moving player a single voxel (auto mantle) — never a wall.
+  Flight is bounded by dirt —
   you can climb the hole's walls, never ascend its open air column.
+- Movement shovels (Q3, future build): a special class of tier shovel that dig
+  fixed preprogrammed shapes instead of spheres — the staircase shovel is the
+  founding member; more shapes may follow. Same verb, same 0.45s cadence; each
+  shape is a batch of idempotent strikes through DigAuthority (§13), so netcode
+  gets them for free. Not part of the launch tier ladder — tiers change radius
+  only; the class is future content.
 
 | Tier | Name               | Radius | Swing | Cost   | Notes                     |
 |------|--------------------|--------|-------|--------|---------------------------|

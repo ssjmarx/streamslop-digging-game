@@ -71,6 +71,11 @@ There are no automated gameplay tests. There is this, forever:
 - ☐ The clang is present, unchanged, audible.
 - ☐ Nothing happens in the hole. Stand in it for one full minute. Confirm: nothing.
 - ☐ Depth meter reads negative and large.
+- ☐ Into a 1-voxel lip: a grounded run stops dead, a jump-led run mantles onto
+  it and keeps its speed; after a mantle, staircases chain; a 2-voxel wall
+  stops everyone; the shovel is still the only way up a wall.
+- ☐ Boot shows no spawn flash and no T-pose: the body first exists already
+  animating, after the replay.
 
 Additions (0.0.4+):
 

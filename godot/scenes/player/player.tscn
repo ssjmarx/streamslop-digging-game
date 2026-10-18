@@ -48,7 +48,7 @@ fov = 70.0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -0.25)
 
 [node name="Camera" type="Camera3D" parent="Rig/FP" unique_id=2002632482]
-current = true
+current = false
 fov = 90.0
 
 [node name="VoxelViewer" type="VoxelViewer" parent="." unique_id=12735774]

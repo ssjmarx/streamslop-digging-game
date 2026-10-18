@@ -86,25 +86,28 @@ func _ready() -> void:
 	_boot_spawn_sequence(true)
 
 
-## Boot + loading: replay first, then spawn at depth 0 beside the hole (2026-10-17).
+## Boot + loading: spectator frame one; the body exists only after the replay.
 func _boot_spawn_sequence(with_replay: bool) -> void:
 	var terrain := $Hole as VoxelTerrain
 	var player := $Player
 	player.set_physics_process(false)
-	await _await_area_meshed(SPAWN_GROUND_AREA)
-	var entries: Array[Dictionary] = ($Diglog as Node).read_entries() if with_replay else []
+	var entries: Array[Dictionary] = []   # not a ternary: the literal loses its typing mid-expression (Addendum 22)
+	if with_replay:
+		entries = ($Diglog as Node).read_entries()
 	var spec: Camera3D = null
-	player.set_body_visible(false)
 	if not entries.is_empty():
 		_sequence_active = true
 		_skip_requested = false
-		player.set_camera_mode(true)
-		spec = _make_spectator(entries)
+		spec = _make_spectator(entries)   # the boot camera, frame one
 		($HUD as CanvasLayer).set_loading(true)
-		await _replay_bands(terrain, entries)
+	player.set_body_visible(false)   # rescue: hide across the teleport; boot: nothing to hide yet
+	await _await_area_meshed(SPAWN_GROUND_AREA)
+	if not entries.is_empty():
+		await _replay_bands(terrain, entries)   # the hole is dug; the body may now exist
 	var spawn := _find_surface_spawn(terrain)
 	player.global_position = spawn
 	print("loader: spawn at %s (nearest top-level solid to origin)" % spawn)
+	await player.spawn_avatar()   # built hidden, Idle fade landed, then revealed
 	player.set_body_visible(true)
 	await _await_area_meshed(AABB(spawn + Vector3(-1.5, -2.5, -1.5), Vector3(3.0, 4.0, 3.0)))
 	var sign := $StopSign as RigidBody3D
@@ -115,8 +118,8 @@ func _boot_spawn_sequence(with_replay: bool) -> void:
 		await _lerp_spectator_to_player(spec, player)   # step 5: the descent to first person
 		spec.queue_free()
 		($HUD as CanvasLayer).set_loading(false)
-		player.set_camera_mode(false)                   # step 6: FPV, controls live
 		_sequence_active = false
+	player.set_camera_mode(false)   # step 6: FPV, controls live (every path lands here)
 	player.on_ground_ready()
 
 

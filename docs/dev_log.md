@@ -522,3 +522,80 @@ the hood — `OUTFIT_UNWORN_PIECES` skips the piece at wear time (8 meshes worn
 instead of 9, both bodies). The hood's overlay coverage entry stays authored in
 `OUTFIT_COVERAGE`, correct for when pieces return; 0.0.7's per-piece dials
 supersede this const.
+
+**Addendum 18 — auto mantle.** Ruling: running into a 1-voxel lip steps you
+onto it instead of dead-stopping — quake step-slide via
+`PhysicsServer3D.body_test_motion` (signature + params verified against pinned
+4.7.2 by `probe_physics_api.gd`). The dials, as ruled: base step 0.58 m
+(Quake's `pm_stepsize`, 18u x 0.0321 m/u), chain window 0.3 s after a step
+raises the search to 1.05 m (just over a voxel — chain-stepping staircases;
+net gain per step exactly one voxel), gate is horizontal speed STRICTLY greater
+than the `walk_speed` constant (walk and crouch still block on purpose), ground
+AND air triggers (vertical walls never qualify — taller than any step height —
+so dig-jump keeps the walls; GDD §3 sentence amended to match), horizontal
+speed retained structurally (input-driven velocity) — "the cost is for bunny
+hopping later when that's implemented with the full quake mechanics" (ruling,
+verbatim note). Body teleports, lens lerps (`mantle_cam_smoothing`, anti-pop —
+distinct from the deleted camera slides). Two sweeps per attempt, only when
+wall-hit at speed: raised sweep must be fully unblocked, down sweep must find
+floor in range, zero-lift grazes rejected (a wall-parallel slide must not eat
+fall speed). Feel-test box added to ROADMAP §4 base list. Gates: smoke clean
+(0 script errors, boot line prints), audit ✓, lint ✓. Uncommitted pending
+corey's by-hand pass: 1-voxel lip steps, 2-voxel wall stops, walk-speed blocks,
+staircase chains, hole walls still need the shovel, no FP camera pop.
+
+**Addendum 19 — mantle never fired; the post-slide velocity trap.** (1) The
+traps, in order: (a) `_try_mantle` gated on `velocity` AFTER `move_and_slide()`
+— Godot rewrites velocity to the slide result, so a head-on hit zeroes
+horizontal speed before the gate reads it (0 m/s fails the walk gate). Lesson:
+gate on PRE-slide intent. (b) Addendum 18's "ground AND air" reading with base
+0.58 m could never fire anyway: blocky terrain surfaces sit at integer heights,
+so every lip is exactly 1.0 m and a 0.58 m raised sweep is still blocked from
+the ground; the chain window could not bootstrap without a first success.
+(2) Ruling (supersedes 18's trigger law): the mantle check runs on EVERY
+qualifying wall bump — enabled, wall contact, horizontal speed strictly above
+`walk_speed` — with NO jump-state machinery. The jump-lead is emergent: a
+grounded capsule searches from +0.58 and cannot clear a 1.0 m lip; a mid-jump
+capsule already carries the elevation, so the same search clears it. Chain
+window unchanged (0.3 s at 1.05 m after any success — grounded staircase
+chaining). `mantle_debug` export prints accepted mantles while tuning. (3)
+ROADMAP §4 box reworded (grounded stops / jump-led mantles / staircases chain /
+2-voxel walls stop / shovel owns walls). Gates: smoke clean, audit ✓, lint ✓.
+
+**Addendum 20 — the boot spawn flash; the body now exists only after the
+replay.** corey saw the spawn position for a frame during the dig sequence:
+three stacked races — (a) the avatar was built in `_ready` and stood at the
+origin (in the hole, dead center of the spectator shot) until main's hide,
+which fired only after the spawn-area meshed await; (b) the FP camera claimed
+`current = true` from the tscn, so the boot rendered from inside her head
+until the spectator made itself current, same awaited frames away; (c) the
+reveal had no animation-settled guarantee (T-pose at the reveal on slow loads).
+Ruling: the player body does not exist until after the hole is dug — `_ready`
+no longer loads the avatar and no longer claims a camera; main calls
+`spawn_avatar()` after spawn placement (builds HIDDEN, waits out the Idle fade,
+then reveals — a T-pose cannot render); the spectator is created before the
+first await so the boot camera is the spectator, frame one; the empty-hole and
+rescue paths get the lens via an explicit `set_camera_mode(false)`. Boot order:
+spectator frame one → "loading your hole." → replay → place → build hidden →
+animate → reveal → descent → FPV, controls live. Rescue path unchanged
+(existing body hides, teleports, re-reveals). ROADMAP §4 box added.
+
+**Addendum 21 — movement shovels (future build; ruled into GDD §3, marked Q3).**
+When shovel tiers exist, "movement shovels" are a special class of tier shovel
+that dig fixed preprogrammed shapes instead of spheres — founding member: the
+staircase shovel; more shapes may follow. Same verb, same 0.45s cadence; each
+shape is a batch of idempotent strikes through DigAuthority, so netcode gets
+them for free. Not part of the launch tier ladder (tiers change radius only —
+the launch law stands); the class is future content.
+
+**Addendum 22 — the rescue crash; the typed-array ternary trap.** Void-diving
+off the rim crashed the loader: `_boot_spawn_sequence` assigned its diglog
+entries through a ternary (`read_entries() if with_replay else []`) into an
+`Array[Dictionary]` — a GDScript ternary strips the empty literal's typed
+conversion, so on the rescue path the expression arrived as untyped `Array`,
+failed the runtime assignment, and killed the coroutine right after the
+teleport (physics stayed off: frozen player). Lesson: typed-array defaults are
+assigned first, populated by branches after — never through a ternary. Fix:
+`var entries: Array[Dictionary] = []` + `if with_replay: entries =
+read_entries()`. No other instances of the pattern in the codebase (searched).
+
