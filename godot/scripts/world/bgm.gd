@@ -10,6 +10,10 @@ extends AudioStreamPlayer
 @export var tracks: Array[String] = [
 	"res://assets/music/pixabay/melodigne-exploration-310024.mp3",
 	"res://assets/music/pixabay/alexgrohl-being-friendly-exploration-242687.mp3",
+	"res://assets/music/noncombat/chill_lofi.ogg",
+	"res://assets/music/noncombat/birds_lofi_chill.mp3",
+	"res://assets/music/noncombat/calm_currents.mp3",
+	"res://assets/music/noncombat/sunset_plains.ogg",
 ]
 ## Seconds of track before the fade begins (Minecraft-style: not the whole song).
 @export var play_seconds := 90.0

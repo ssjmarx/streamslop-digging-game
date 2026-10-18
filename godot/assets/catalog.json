@@ -71,6 +71,27 @@
    "paths": [
      "meshes/quaternius/street/Sign_Stop.obj",
      "meshes/quaternius/street/Sign_Stop.mtl"
+   ]},
+  {"id": "music_noncombat_01", "name": "Chill Lofi Inspired",            "author": "omfgdude",       "license": "CC0",
+   "paths": ["music/noncombat/chill_lofi.ogg"]},
+  {"id": "music_noncombat_02", "name": "Birds (LoFi, Chill)",            "author": "HoliznaCC0",     "license": "CC0",
+   "paths": ["music/noncombat/birds_lofi_chill.mp3"]},
+  {"id": "music_noncombat_03", "name": "Calm Currents (LoFi Relax Calm)", "author": "HoliznaCC0",    "license": "CC0",
+   "paths": ["music/noncombat/calm_currents.mp3"]},
+  {"id": "music_noncombat_04", "name": "Sunset Plains",                  "author": "Yoiyami",        "license": "CC0",
+   "paths": ["music/noncombat/sunset_plains.ogg"]},
+  {"id": "anim_ual2",        "name": "Universal Animation Library 2",    "author": "Quaternius",     "license": "CC0",
+   "paths": ["animations/ual2/UAL2_Standard.glb"]},
+  {"id": "char_outfit_ranger_f", "name": "Female Ranger (Modular Fantasy Outfits)", "author": "Quaternius", "license": "CC0",
+   "paths": [
+     "characters/outfits/Female_Ranger.gltf",
+     "characters/outfits/Female_Ranger.bin",
+     "characters/outfits/T_Ranger_BaseColor.png",
+     "characters/outfits/T_Ranger_Normal.png",
+     "characters/outfits/T_Ranger_ORM.png",
+     "characters/outfits/T_Regular_Female_Dark_BaseColor.png",
+     "characters/outfits/T_Regular_Female_Normal.png",
+     "characters/outfits/T_Regular_Female_Roughness.png"
    ]}
 ]
 

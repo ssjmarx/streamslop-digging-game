@@ -447,3 +447,28 @@ lives at its hand-tuned scene position; crouch still drops the lens height (a
 snap in `_set_crouch`). Feel notes: 30 startup frames synced, movement tech
 emerging. Gates: smoke clean (0 script errors), audit ✓ (19 files, 92
 functions), lint ✓ (37 files).
+
+**Addendum 14 — 0.0.3 MEMORY pt1 + the asset wave.** (1) **The gate closed:**
+feel checklist passed by hand; v0.0.2 tagged and pushed; both exports built and
+zipped (v0.0.1 ritual); internal patch note written. (2) **MEMORY:** the diglog
+schema now stores the float strike center ("c") — replaying from floored ints
+mis-derived boundary cells; `aim.cells_in_sphere()` is the one static rule
+consumed by sight, strike, and replayer; main boots replay-first (50k-sphere
+benchmark: 7.85s, 2.4 MB jsonl — packed estimate ~0.8 MB, dev_log only), then
+spawns at the nearest top-level solid column in the surface band (ruling: depth
+0, never inside your own hole; the 50k synthetic shaft exposed the deep-column
+bug, fixed by band-limiting the search); the stop sign persists in
+user://hole/state.json (saved on reveal + exit) and materializes AFTER replay,
+freezing only if its AABB intersects solid (ruling). probe_replay.gd: PASS —
+40 spheres, 187/187 cells, voxel-identical. Legacy 0.0.2 diglogs wipe on boot
+(dev reset). HUD save-size readout rejected. (3) **Music:** 9 tracks staged
+with licenses; 4 CC0s implemented (omfgdude, HoliznaCC0 x2, Yoiyami — WAV
+converted to OGG); the 3 CC BY tracks + the Satie stage unimplemented per the
+no-unattributed-commits ruling; the Satie verified PDM 1.0 but is a 30 s
+fragment — vibe-rejected. Playlist: 2 -> 6. (4) **UAL2 registered** as a second
+library (43 clips under ual2/) for future actions; swing enum stays UAL1 names.
+(5) **Female Ranger worn** on avatar AND ghost (9 skinned meshes reparented
+onto the Quaternius standard rig, host shadow policy inherited) — the shadow
+wears clothes. `outfit_enabled` export; full wardrobe is 0.0.7's. Gates:
+import clean, smoke clean (0 script errors), audit ✓, lint ✓. pt2 pending:
+compaction decision, 0.0.5 credit lines for the staged CC BY set.

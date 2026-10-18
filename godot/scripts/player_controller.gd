@@ -106,6 +106,11 @@ const HAIR_COLOR := Color8(94, 64, 42)   # multiplies the grayscale detail map
 const BROW_TINT := Color8(70, 48, 32)   # brown tint for the built-in brows mesh
 const HAIR_BASE_COLOR_TEXTURE := "res://assets/meshes/quaternius/superhero_female/T_Hair_2_BaseColor.png"
 const HAIR_NORMAL_TEXTURE := "res://assets/meshes/quaternius/superhero_female/T_Hair_2_Normal.png"
+const UAL2_SCENE := "res://assets/animations/ual2/UAL2_Standard.glb"
+const OUTFIT_SCENE := "res://assets/characters/outfits/Female_Ranger.gltf"
+
+## Dress the character (0.0.3 ruling: Female Ranger now; full wardrobe is 0.0.7's).
+@export var outfit_enabled := true
 const HAND_BONE := "hand_r"   # universal rig right hand; the shovel rides it
 const SHOVEL_MESH := "res://assets/meshes/quaternius/survival/Shovel.obj"   # OBJ: loads as Mesh, not a scene
 
@@ -277,6 +282,7 @@ func _build_shadow_ghost(avatar: Node3D) -> void:
 		return
 	for piece_path in HAIR_PIECES:
 		_attach_hair_piece(ghost, piece_path, HAIR_PIECES[piece_path])
+	_attach_outfit(ghost)   # the shadow wears clothes too
 	var ghost_meshes: Array[MeshInstance3D] = []
 	_collect_mesh_instances(ghost, ghost_meshes)
 	for mesh_instance in ghost_meshes:
@@ -293,6 +299,65 @@ func _mirror_ghost_skeleton() -> void:
 		_ghost_skeleton.set_bone_pose_position(i, _skeleton.get_bone_pose_position(i))
 		_ghost_skeleton.set_bone_pose_rotation(i, _skeleton.get_bone_pose_rotation(i))
 		_ghost_skeleton.set_bone_pose_scale(i, Vector3.ONE if bone_name == HEAD_BONE else _skeleton.get_bone_pose_scale(i))
+
+
+## Register UAL2 as a second library ("ual2/...") so future actions can play its clips.
+func _register_ual2(anim_player: AnimationPlayer) -> void:
+	var packed: PackedScene = load(UAL2_SCENE)
+	if packed == null:
+		return
+	var temp := packed.instantiate()
+	var found := temp.find_children("*", "AnimationPlayer", true, false)
+	if found.is_empty():
+		temp.free()
+		return
+	var lib: AnimationLibrary = (found[0] as AnimationPlayer).get_animation_library("")
+	if lib != null and not anim_player.has_animation_library("ual2"):
+		anim_player.add_animation_library("ual2", lib)
+		print("player: UAL2 registered (%d clips under ual2/)" % lib.get_animation_list().size())
+	temp.free()
+
+
+## Wear the outfit: reparent its skinned meshes onto our skeleton (same bone names).
+func _attach_outfit(avatar: Node) -> void:
+	if not outfit_enabled:
+		return
+	var packed: PackedScene = load(OUTFIT_SCENE)
+	if packed == null:
+		push_warning("outfit: scene failed to load")
+		return
+	var skeleton := _find_skeleton(avatar)
+	if skeleton == null:
+		return
+	var temp := packed.instantiate()
+	var src_list := temp.find_children("*", "Skeleton3D", true, false)
+	if src_list.is_empty():
+		push_warning("outfit: no skeleton in source")
+		temp.free()
+		return
+	var src := src_list[0] as Skeleton3D
+	if src.get_bone_count() != skeleton.get_bone_count():
+		push_warning("outfit: bone count mismatch (%d vs %d) -- skipping" % [src.get_bone_count(), skeleton.get_bone_count()])
+		temp.free()
+		return
+	var host_meshes: Array[MeshInstance3D] = []
+	_collect_mesh_instances(avatar, host_meshes)
+	var host_layers := 1
+	var host_shadow := GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if not host_meshes.is_empty():
+		host_layers = host_meshes[0].layers
+		host_shadow = host_meshes[0].cast_shadow   # the host's shadow policy (ghost-only shadows)
+	var worn := 0
+	for child in src.get_children():
+		if child is MeshInstance3D:
+			var mesh := child.duplicate() as MeshInstance3D
+			skeleton.add_child(mesh)
+			mesh.skeleton = NodePath("..")   # ride OUR skeleton: Quaternius standard rig, same bone names
+			mesh.layers = host_layers
+			mesh.cast_shadow = host_shadow
+			worn += 1
+	print("player: outfit worn (%d meshes)" % worn)
+	temp.free()
 
 
 ## Hold-to-crouch: resize the capsule, drop the TP pivot; FP eye height is the slide's job.
@@ -322,6 +387,7 @@ func _load_avatar() -> void:
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # the ghost is the shadow's single source of truth (ruling 2026-10-17)
 	for piece_path in HAIR_PIECES:
 		_attach_hair_piece(avatar, piece_path, HAIR_PIECES[piece_path])
+	_attach_outfit(avatar)
 	_attach_shovel(avatar)
 	var anim_player := _find_anim_player(avatar)
 	if anim_player == null:
@@ -330,6 +396,7 @@ func _load_avatar() -> void:
 	if _attach_universal_anims(anim_player) == 0:
 		placeholder.visible = true
 		return
+	_register_ual2(anim_player)
 	placeholder.visible = false
 	_skeleton = _find_skeleton(avatar)
 	_head_idx = _skeleton.find_bone(HEAD_BONE) if _skeleton != null else -1
