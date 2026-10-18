@@ -122,6 +122,10 @@ ground but also it's a giant co-op quake 3 level."
   Left/right arrows, rotating pedestal, name entry, RANDOMIZE, LOCK IN.
 - Roster: Adventurer, Knight, Robot, Bandit, Zombie Businessman, and Shovelhead — the
   one original asset in the entire game ("corey", all rights reserved).
+- Outfits declare per-piece coverage: each piece names the bone regions it replaces,
+  and body skin is culled under covered pieces; pieces with no coverage overlay the
+  body (hoods show the face, belts ride the shirt). Mods without coverage data
+  overlay harmlessly — never naked by default.
 - Change your avatar later at the sign ("the mirror is at the sign" — sole dev
   comment on the matter).
 - Local modding from day one: a folder in `user://avatars/` with `model.gltf`,

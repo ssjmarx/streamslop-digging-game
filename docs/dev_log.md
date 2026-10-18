@@ -488,3 +488,37 @@ lerp to the FP eye -> FPV cut, controls live. Paced toward
 `dig_sequence_seconds` (6s); any key/click skips with the end state completed
 synchronously. Superseded `_replay_hole` deleted. Gates: smoke (0 errors,
 sequence 0.30s for the 40-sphere dev hole), audit ✓, lint ✓.
+
+**Addendum 16 — the outfit coverage cull.** (1) **The system**: worn outfit
+pieces now declare per-piece coverage (`OUTFIT_COVERAGE` in player_controller.gd:
+piece node name -> region groups the piece REPLACES); the union of visible
+pieces' regions becomes a covered bone set, and `body_cull.gd` drops body
+triangles whose skin weights lie under it (strictness 1.0 = fully covered only,
+so boundary triangles survive and no holes open at seams). The tri-state: cover
+= non-empty list; overlay = empty list (hood, pauldrons, bracer, belts); not
+worn = visibility, already existing. Culled meshes cache per mesh + bones +
+strictness; the source ArrayMesh is never mutated; avatar and ghost land on the
+same cached culled mesh — the shadow stays dressed identically. (2) **The
+probe** (`probe_body_cull.gd`, reporting through the production classifier):
+body = 1 surface, 7376 verts / 12812 tris, 4 influences/vertex, weight sums
+exactly 1.0, zero blend shapes; per-piece weights settled the table — Arms
+includes fingers (gloves), Feet is knee-high (calf 84%), Body rides clavicle +
+neck_01 (collar), Hood weights Head 59% but stays an overlay (modeled with an
+open face). Full Ranger set culls 9672/12812 triangles (75.5%). (3) **The
+region contract** (design fact for 0.0.7/0.0.8, GDD §6b amended): groups derive
+from bone-name prefixes — neck split from head (hoods must never eat faces),
+calf from thigh (knee-high boots), pelvis lumps into torso; modded rigs
+validated by the bone list get groups for free, and mods without coverage data
+overlay harmlessly. Face furniture (Eyes/Eyebrows) and hair are exempt
+(BODY_MESH_NODES). (4) **Order fix**: `_load_avatar` now caches `_skeleton`
+before `_attach_outfit` — caught on read: the rebuild fires inside
+`_attach_outfit` and reads the bone map. One real parse bug en route:
+`add_surface_from_arrays` takes lods as a Dictionary, not an Array.
+`outfit_coverage_strictness` ships as a live export dial (1.0 default). Gates:
+probe exit 0, smoke 0 script errors, audit ✓, lint ✓ (50 files).
+
+**Addendum 17 — unhooded default.** Ruling: the default outfit ships without
+the hood — `OUTFIT_UNWORN_PIECES` skips the piece at wear time (8 meshes worn
+instead of 9, both bodies). The hood's overlay coverage entry stays authored in
+`OUTFIT_COVERAGE`, correct for when pieces return; 0.0.7's per-piece dials
+supersede this const.

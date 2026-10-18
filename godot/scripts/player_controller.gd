@@ -47,6 +47,12 @@ extends CharacterBody3D
 	set(v):
 		outfit_scale = v
 		_apply_outfit_pose()
+## Body-triangle drop threshold: a triangle drops when covered weight >= this
+## fraction of its total (1.0 = only fully covered triangles; lower eats seams).
+@export var outfit_coverage_strictness := 1.0:
+	set(v):
+		outfit_coverage_strictness = v
+		_rebuild_body_coverage()
 @export var mouse_sens := 0.003
 ## Lerp weight for the body facing (per second).
 @export var body_turn_speed := 12.0
@@ -127,6 +133,26 @@ const HAIR_BASE_COLOR_TEXTURE := "res://assets/meshes/quaternius/superhero_femal
 const HAIR_NORMAL_TEXTURE := "res://assets/meshes/quaternius/superhero_female/T_Hair_2_Normal.png"
 const UAL2_SCENE := "res://assets/animations/ual2/UAL2_Standard.glb"
 const OUTFIT_SCENE := "res://assets/characters/outfits/Female_Ranger.gltf"
+## The coverage culler (static utility) and the per-piece coverage table:
+## piece node name -> region groups whose body skin the piece REPLACES. An
+## empty list = overlay: the piece rides above the body (hood shows the face,
+## belts ride the shirt). Groups derive from bone names in body_cull.gd
+## (torso, neck, head, arm/hand/thigh/calf/foot per side); probe_body_cull.gd
+## is the per-piece weight evidence these entries are authored from.
+const BodyCull := preload("res://scripts/player/body_cull.gd")
+const OUTFIT_COVERAGE := {
+	"Female_Ranger_Body": ["torso", "neck", "arm_l", "arm_r"],
+	"Female_Ranger_Arms": ["arm_l", "arm_r", "hand_l", "hand_r"],
+	"Female_Ranger_Legs": ["thigh_l", "thigh_r", "calf_l", "calf_r"],
+	"Female_Ranger_Feet": ["calf_l", "calf_r", "foot_l", "foot_r"],
+	"Female_Ranger_Head_Hood": [],
+	"Female_Ranger_Acc_Pauldrons": [],
+	"Female_Ranger_Arms_Bracer": [],
+	"Female_Ranger_Body_Belt_1": [],
+	"Female_Ranger_Body_Belt_2": [],
+}
+const BODY_MESH_NODES := ["Superhero_Female"]   # cullable body nodes (0.0.7 moves this per-avatar)
+const OUTFIT_UNWORN_PIECES := ["Female_Ranger_Head_Hood"]   # the default outfit ships unhooded (per-piece dials are 0.0.7's)
 const HAND_BONE := "hand_r"   # universal rig right hand; the shovel rides it
 const SHOVEL_MESH := "res://assets/meshes/quaternius/survival/Shovel.obj"   # OBJ: loads as Mesh, not a scene
 
@@ -163,6 +189,8 @@ var _shovel: MeshInstance3D   # the attached held shovel; the pose exports apply
 var _shovel_diagonal := 0.0   # raw mesh diagonal at attach; scale normalization divides by it
 var _hair_pieces: Array[Node] = []   # attached hair pieces; hidden by the FP head tuck
 var _outfit_meshes: Array[MeshInstance3D] = []   # worn outfit meshes; posed by the live dials
+var _cull_bodies: Array[MeshInstance3D] = []   # cullable body meshes (avatar + ghost), by BODY_MESH_NODES
+var _body_originals := {}   # body MeshInstance3D -> its unculled source mesh (the restore path)
 var _eyebrows: MeshInstance3D   # the built-in Eyebrows mesh; hidden by the FP head tuck
 var _skeleton: Skeleton3D   # the avatar's skeleton, cached at load
 var _head_idx := -1   # the Head bone index; -1 until the avatar loads
@@ -299,6 +327,7 @@ func _build_shadow_ghost(avatar: Node3D) -> void:
 		return
 	for piece_path in HAIR_PIECES:
 		_attach_hair_piece(ghost, piece_path, HAIR_PIECES[piece_path])
+	_cull_bodies.append_array(_coverage_targets(ghost))   # the shadow's body culls identically
 	_attach_outfit(ghost)   # the shadow wears clothes too
 	var ghost_meshes: Array[MeshInstance3D] = []
 	_collect_mesh_instances(ghost, ghost_meshes)
@@ -366,7 +395,7 @@ func _attach_outfit(avatar: Node) -> void:
 		host_shadow = host_meshes[0].cast_shadow   # the host's shadow policy (ghost-only shadows)
 	var worn := 0
 	for child in src.get_children():
-		if child is MeshInstance3D:
+		if child is MeshInstance3D and not (child.name in OUTFIT_UNWORN_PIECES):
 			var mesh := child.duplicate() as MeshInstance3D
 			skeleton.add_child(mesh)
 			mesh.skeleton = NodePath("..")   # ride OUR skeleton: Quaternius standard rig, same bone names
@@ -375,6 +404,7 @@ func _attach_outfit(avatar: Node) -> void:
 			_outfit_meshes.append(mesh)
 			worn += 1
 	_apply_outfit_pose()
+	_rebuild_body_coverage()   # body skin under covered pieces is culled (avatar + ghost)
 	print("player: outfit worn (%d meshes)" % worn)
 	temp.free()
 
@@ -385,6 +415,44 @@ func _apply_outfit_pose() -> void:
 		mesh.position = outfit_offset
 		mesh.rotation_degrees = outfit_rot_deg
 		mesh.scale = outfit_scale
+
+
+## Cullable body mesh instances under a node (avatar or ghost), by node name.
+func _coverage_targets(root: Node) -> Array[MeshInstance3D]:
+	# Coverage culls only BODY_MESH_NODES: face furniture and hair are exempt.
+	var found: Array[MeshInstance3D] = []
+	_collect_mesh_instances(root, found)
+	var out: Array[MeshInstance3D] = []
+	for mesh_instance in found:
+		if mesh_instance.name in BODY_MESH_NODES:
+			out.append(mesh_instance)
+	return out
+
+
+## Drop body triangles under worn pieces' coverage; restore originals when empty.
+func _rebuild_body_coverage() -> void:
+	# Visible pieces x OUTFIT_COVERAGE; avatar + ghost share the cached culled mesh.
+	if _cull_bodies.is_empty() or _skeleton == null:
+		return
+	var regions := {}
+	for mesh in _outfit_meshes:
+		if not mesh.visible:
+			continue
+		for region in OUTFIT_COVERAGE.get(String(mesh.name), []):
+			regions[region] = true
+	var covered := {} if regions.is_empty() else BodyCull.covered_indices(_skeleton, regions.keys())
+	for body in _cull_bodies:
+		if body == null or not is_instance_valid(body):
+			continue
+		if not _body_originals.has(body):
+			_body_originals[body] = body.mesh
+		var target: Mesh = _body_originals[body]
+		if not covered.is_empty():
+			target = BodyCull.culled_mesh(target, _skeleton, covered, outfit_coverage_strictness)
+		if body.mesh != target:
+			body.mesh = target
+	print("player: body coverage %s (%d covered bones, %d body meshes)" % [
+		"on" if not covered.is_empty() else "off", covered.size(), _cull_bodies.size()])
 
 
 ## Camera mode for the boot sequence: set the flag and land it (public on purpose).
@@ -428,8 +496,10 @@ func _load_avatar() -> void:
 	_collect_mesh_instances(avatar, _avatar_meshes)
 	for mesh in _avatar_meshes:
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # the ghost is the shadow's single source of truth (ruling 2026-10-17)
+	_cull_bodies.append_array(_coverage_targets(avatar))
 	for piece_path in HAIR_PIECES:
 		_attach_hair_piece(avatar, piece_path, HAIR_PIECES[piece_path])
+	_skeleton = _find_skeleton(avatar)   # set before outfit wear: the coverage rebuild reads the bone map
 	_attach_outfit(avatar)
 	_attach_shovel(avatar)
 	var anim_player := _find_anim_player(avatar)
@@ -441,7 +511,6 @@ func _load_avatar() -> void:
 		return
 	_register_ual2(anim_player)
 	placeholder.visible = false
-	_skeleton = _find_skeleton(avatar)
 	_head_idx = _skeleton.find_bone(HEAD_BONE) if _skeleton != null else -1
 	_update_head_tuck()
 	_build_shadow_ghost(avatar)
