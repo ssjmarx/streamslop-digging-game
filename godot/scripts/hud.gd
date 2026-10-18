@@ -23,3 +23,8 @@ func _process(_delta: float) -> void:
 		depth_label.text = "DEPTH %.1fm" % player.global_position.y
 	dirt_label.text = "DIRT %d" % GameState.dirt
 	shovel_label.text = "SHOVEL %s" % GameState.SHOVELS[GameState.shovel_tier]["short"]
+
+
+## Boot sequence label (0.0.3 ruling): "loading your hole."
+func set_loading(v: bool) -> void:
+	($LoadLabel as Label).visible = v

@@ -472,3 +472,19 @@ onto the Quaternius standard rig, host shadow policy inherited) — the shadow
 wears clothes. `outfit_enabled` export; full wardrobe is 0.0.7's. Gates:
 import clean, smoke clean (0 script errors), audit ✓, lint ✓. pt2 pending:
 compaction decision, 0.0.5 credit lines for the staged CC BY set.
+
+**Addendum 15 — the opening credits: the dig sequence.** (1) **Worn Outfit
+dials**: offset / rot_deg / scale as live setters over `_outfit_meshes` (avatar
++ ghost share them — the shadow stays dressed); bind-pose drift is now an
+inspector dial. (2) **Spawn-edge fix**: the ring search required only the
+candidate column, so a dug neighbor meant feet over the pit ("spawned into a
+hole") — `_spawn_on_column` now demands a solid 3x3 surface neighborhood. (3)
+**The sequence** (boot with a non-empty hole; empty hole and rescues stay
+fast): spectator camera above the hole centroid -> "loading your hole." label
+-> depth bands replay top-down (sort order is union-safe: per cell, whichever
+sphere hits first erases; order changes who, never what), floor growing per
+band just ahead of the front -> TP reveal at the surface spawn -> smoothstep
+lerp to the FP eye -> FPV cut, controls live. Paced toward
+`dig_sequence_seconds` (6s); any key/click skips with the end state completed
+synchronously. Superseded `_replay_hole` deleted. Gates: smoke (0 errors,
+sequence 0.30s for the 40-sphere dev hole), audit ✓, lint ✓.

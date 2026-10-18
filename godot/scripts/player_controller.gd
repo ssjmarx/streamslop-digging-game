@@ -28,6 +28,25 @@ extends CharacterBody3D
 ## Crouch_Fwd reads correct at this scale at this speed.
 @export var crouch_anim_ref_speed := 2.575
 @export var crouch_anim_ref_scale := 0.75
+
+@export_group("Worn Outfit")
+## Dress the character (0.0.3 ruling: Female Ranger now; full wardrobe is 0.0.7's).
+@export var outfit_enabled := true
+## Local nudge for the worn outfit meshes (bind-pose drift, tuned by eye).
+@export var outfit_offset := Vector3.ZERO:
+	set(v):
+		outfit_offset = v
+		_apply_outfit_pose()
+## Local rotation (degrees) for the worn outfit meshes.
+@export var outfit_rot_deg := Vector3.ZERO:
+	set(v):
+		outfit_rot_deg = v
+		_apply_outfit_pose()
+## Scale for the worn outfit meshes.
+@export var outfit_scale := Vector3.ONE:
+	set(v):
+		outfit_scale = v
+		_apply_outfit_pose()
 @export var mouse_sens := 0.003
 ## Lerp weight for the body facing (per second).
 @export var body_turn_speed := 12.0
@@ -108,9 +127,6 @@ const HAIR_BASE_COLOR_TEXTURE := "res://assets/meshes/quaternius/superhero_femal
 const HAIR_NORMAL_TEXTURE := "res://assets/meshes/quaternius/superhero_female/T_Hair_2_Normal.png"
 const UAL2_SCENE := "res://assets/animations/ual2/UAL2_Standard.glb"
 const OUTFIT_SCENE := "res://assets/characters/outfits/Female_Ranger.gltf"
-
-## Dress the character (0.0.3 ruling: Female Ranger now; full wardrobe is 0.0.7's).
-@export var outfit_enabled := true
 const HAND_BONE := "hand_r"   # universal rig right hand; the shovel rides it
 const SHOVEL_MESH := "res://assets/meshes/quaternius/survival/Shovel.obj"   # OBJ: loads as Mesh, not a scene
 
@@ -146,6 +162,7 @@ var _swing_until_msec := 0   # while set, the swing clip owns the body; locomoti
 var _shovel: MeshInstance3D   # the attached held shovel; the pose exports apply to it live
 var _shovel_diagonal := 0.0   # raw mesh diagonal at attach; scale normalization divides by it
 var _hair_pieces: Array[Node] = []   # attached hair pieces; hidden by the FP head tuck
+var _outfit_meshes: Array[MeshInstance3D] = []   # worn outfit meshes; posed by the live dials
 var _eyebrows: MeshInstance3D   # the built-in Eyebrows mesh; hidden by the FP head tuck
 var _skeleton: Skeleton3D   # the avatar's skeleton, cached at load
 var _head_idx := -1   # the Head bone index; -1 until the avatar loads
@@ -355,9 +372,35 @@ func _attach_outfit(avatar: Node) -> void:
 			mesh.skeleton = NodePath("..")   # ride OUR skeleton: Quaternius standard rig, same bone names
 			mesh.layers = host_layers
 			mesh.cast_shadow = host_shadow
+			_outfit_meshes.append(mesh)
 			worn += 1
+	_apply_outfit_pose()
 	print("player: outfit worn (%d meshes)" % worn)
 	temp.free()
+
+
+## Re-apply the outfit pose dials to every worn mesh (live, per the export law).
+func _apply_outfit_pose() -> void:
+	for mesh in _outfit_meshes:
+		mesh.position = outfit_offset
+		mesh.rotation_degrees = outfit_rot_deg
+		mesh.scale = outfit_scale
+
+
+## Camera mode for the boot sequence: set the flag and land it (public on purpose).
+func set_camera_mode(tp: bool) -> void:
+	third_person = tp
+	_apply_camera_mode()
+
+
+## Body visibility for the boot sequence (avatar + ghost both ride mesh_root).
+func set_body_visible(v: bool) -> void:
+	mesh_root.visible = v
+
+
+## World transform of the FP lens -- the spectator lerp's destination.
+func fp_eye_transform() -> Transform3D:
+	return fp_camera.global_transform
 
 
 ## Hold-to-crouch: resize the capsule, drop the TP pivot; FP eye height is the slide's job.
