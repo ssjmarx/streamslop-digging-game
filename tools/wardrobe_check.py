@@ -22,9 +22,10 @@ REQUIRED_NODES = ("Armature", "Body_Under", "Head")
 
 # Universal-rig bones the animation and wardrobe systems rely on (Quaternius
 # universal rig; the names body_cull.gd's region map and the UAL libraries
-# are built from).
+# are built from -- note the rig's head bone is "Head", capital H, matching
+# player_controller.gd's HEAD_BONE).
 REQUIRED_BONES = (
-    "pelvis", "spine_01", "spine_02", "spine_03", "neck_01", "head",
+    "pelvis", "spine_01", "spine_02", "spine_03", "neck_01", "Head",
     "clavicle_l", "clavicle_r", "upperarm_l", "upperarm_r",
     "lowerarm_l", "lowerarm_r", "hand_l", "hand_r",
     "thigh_l", "thigh_r", "calf_l", "calf_r", "foot_l", "foot_r",
@@ -32,6 +33,13 @@ REQUIRED_BONES = (
 
 # Forbidden in any node name: spaces and dots (catches "My Mesh", "Armature.001").
 _FORBIDDEN_CHARS = (" ", ".")
+
+# The naming grammar (dev_log Addendum 29): fixed piece names, the hair slot
+# prefix, and the slot words a two-token garment piece must end in. Names of
+# three or more tokens are accessories and always conform.
+_FIXED_PIECE_NAMES = ("Body_Under", "Head", "Eyes", "Eyebrows")
+_HAIR_PREFIX = "Hair_"
+_SLOT_WORDS = ("Body", "Arms", "Legs", "Feet")
 
 _COMPONENT_SIZES = {5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4}
 _TYPE_COUNTS = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT3": 9, "MAT4": 16}
@@ -115,6 +123,26 @@ def _node_scale_bad(node):
     return False
 
 
+def _name_grammar_violation(name):
+    """Return a violation message for a piece name, or None when it conforms.
+
+    Fixed names and Hair_<name> always pass; a two-token name must end in a
+    slot word (the exclusive-slot law); three-or-more-token names are
+    accessories and always pass (the free-stacking law).
+    """
+    if name in _FIXED_PIECE_NAMES or name.startswith(_HAIR_PREFIX):
+        return None
+    parts = name.split("_")
+    if len(parts) == 2:
+        if parts[1] in _SLOT_WORDS:
+            return None
+        return ("two-token piece %r must end in a slot word (Body/Arms/"
+                "Legs/Feet) -- or be a fixed name" % name)
+    if len(parts) >= 3:
+        return None
+    return "single-token name %r is not a fixed name" % name
+
+
 def check_glb(path):
     """Check one export against the wardrobe contract; return (lines, ok)."""
     lines = []
@@ -133,7 +161,13 @@ def check_glb(path):
     skins = doc.get("skins", [])
     meshes = doc.get("meshes", [])
 
-    # -- Names: present, clean, unique, and the required trio exists.
+    # -- Names: present, clean, unique among siblings, required trio exists.
+    # A bone and a mesh may share a name (different namespaces once imported);
+    # same-parent duplicates are what Godot silently renames, so those fail.
+    parent = {}
+    for i, node in enumerate(nodes):
+        for child in node.get("children", []):
+            parent[child] = i
     seen = {}
     for i, node in enumerate(nodes):
         name = node.get("name")
@@ -144,8 +178,15 @@ def check_glb(path):
             if ch in name:
                 fail("node name %r contains %r -- underscores only" % (name, ch))
         if name in seen:
-            fail("duplicate node name %r (first at node %d)" % (name, seen[name]))
-        seen[name] = i
+            if seen[name][1] == parent.get(i, -1):
+                fail("duplicate node name %r under the same parent (nodes %d, %d) "
+                     "-- Godot would silently rename one" % (name, seen[name][0], i))
+            else:
+                lines.append("INFO node name %r is shared across namespaces "
+                             "(nodes %d, %d) -- legal, e.g. the Head bone and "
+                             "the Head mesh" % (name, seen[name][0], i))
+        else:
+            seen[name] = (i, parent.get(i, -1))
     for required in REQUIRED_NODES:
         if required not in seen:
             fail("required node %r missing" % required)
@@ -176,6 +217,10 @@ def check_glb(path):
                 fail("%s carries a non-unit scale (the tiny/huge trap)" % name)
             continue
         pieces += 1
+        if node.get("name"):
+            violation = _name_grammar_violation(node["name"])
+            if violation:
+                fail(violation)
         if "skin" not in node:
             fail("%s has a mesh but no skin -- it would not deform" % name)
         if _node_scale_bad(node):

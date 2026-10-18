@@ -729,3 +729,22 @@ overlays; hiding is authored show/hides per slot (head/torso/arms/legs/feet/
 accessory/hair); sources live in `blender/` at the repo root. First export target:
 the female body + Ranger set, parity with today's dressed character.
 
+**Addendum 29 — the naming grammar; blender/ goes local.** The first authoring
+pass produced its own law, adopted same day: node-name arity IS the type marker.
+Two-token names (`Ranger_Feet`, `Hair_Long`) are slot pieces — mutually exclusive
+with their slot word (Body, Arms, Legs, Feet, Hair); three-or-more-token names
+(`Ranger_Head_Hood`, `Ranger_Body_Belt_1`) are accessories — independent toggles
+that stack with anything, and the game never arbitrates their overlap (clipping
+accessories are the player's to switch off). Numbered suffixes are
+accessory-only (`Ranger_Feet_2` would be an accessory, not a boot variant).
+`wardrobe_check.py` now enforces the grammar at the gate, plus two fixes to the
+checker itself: the rig's head bone is `Head`, capital H (the HEAD_BONE const
+was right all along), and name uniqueness is same-parent only — the `Head`
+bone and the `Head` mesh legally share a name across namespaces. Also:
+`blender/` leaves git — the .blend sources and exports live on this PC only; a
+private game-assets repo (sources + license files that cannot ship publicly)
+is slated for the CREDITS milestone, and the authoring contract doc will move
+there when it exists. The law itself lives in GDD §6b. First export
+`wardrobe_female.glb`: 20 skinned pieces, 65 joints, one armature — gate green
+after the checker fixes above.
+

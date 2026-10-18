@@ -139,6 +139,14 @@ ground but also it's a giant co-op quake 3 level."
   no triangle culling in the dev path. Mods without any wardrobe data overlay
   harmlessly — never naked by default. Seam, silhouette, and cross-gender work
   is human, in Blender.
+- The naming grammar carries the exclusivity law: a two-token piece name
+  (`Ranger_Feet`, `Peasant_Body`) is a slot piece — mutually exclusive with its
+  slot word (`Body`, `Arms`, `Legs`, `Feet`, and the `Hair_<name>` prefix for
+  hair); a three-or-more-token name (`Ranger_Head_Hood`, `Ranger_Body_Belt_1`)
+  is an accessory — an independent toggle that stacks with anything. The game
+  arbitrates slot conflicts by construction and never arbitrates accessory
+  overlap: clipping accessories are the player's to switch off.
+  `tools/wardrobe_check.py` enforces the grammar at the gate.
 - Change your avatar later at the sign ("the mirror is at the sign" — sole dev
   comment on the matter).
 - Local modding from day one: a folder in `user://avatars/` with `model.gltf`,

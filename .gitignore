@@ -12,3 +12,10 @@ dist/
 # Unimplemented asset staging (full packs, licenses, attribution; assets
 # graduate into godot/assets/ + catalog.json when implemented)
 assets_unimplemented/
+
+# Blender authoring sources (local-only; a private assets repo is slated
+# for CREDITS -- sources, exports, and license files that cannot ship publicly)
+blender/
+
+# blender stuff
+blender/
