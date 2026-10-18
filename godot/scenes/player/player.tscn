@@ -18,7 +18,7 @@ height = 1.8
 [node name="Player" type="CharacterBody3D" unique_id=488565832]
 collision_layer = 2
 script = ExtResource("1_player")
-fp_near_plane = 0.05
+fp_near_plane = 0.001
 shovel_offset = Vector3(-0.03, 0.07, 0.12)
 shovel_rot_deg = Vector3(-97.315, 0, -6.85)
 
