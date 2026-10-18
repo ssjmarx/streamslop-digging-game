@@ -7,6 +7,7 @@ extends RigidBody3D
 
 const FACE_UP_ROTATION := Vector3(-90.0, 0.0, 0.0)   # the model faces +Z; -90 about X aims it at the sky
 const TYPE_AIR := 0   # TYPE-channel value of empty (library index 0 in main.tscn)
+const STATE_PATH := "user://hole/state.json"   # MEMORY: the sign's persisted pose
 
 @export_group("Stop Sign")
 ## Meters, post-to-octagon-top: normalized from the OBJ's AABB.
@@ -18,14 +19,69 @@ const TYPE_AIR := 0   # TYPE-channel value of empty (library index 0 in main.tsc
 
 @onready var _mesh: MeshInstance3D = $Mesh
 
+var materialized := false   # the sign does not exist until main calls materialize()
 
-## Boot: face-up, freeze, normalize the mesh, box collider from the AABB, arm the reveal gate.
+
+## Boot: inert -- the scene freezes the body so it never falls pre-materialize.
 func _ready() -> void:
-	rotation_degrees = FACE_UP_ROTATION
 	freeze = true
+
+
+## Called by main AFTER generation + replay: stored pose or fossil spot; freeze iff buried.
+func materialize(terrain: VoxelTerrain) -> void:
+	if materialized:
+		return
+	materialized = true
+	var stored := _load_state()
+	if not stored.is_empty():
+		global_position = stored.pos
+		global_basis = Basis(stored.quat)
+	else:
+		rotation_degrees = FACE_UP_ROTATION
 	_normalize_mesh()
 	_build_collision()
+	freeze = _intersects_solid(terrain)
 	DirtBus.dirt_dug.connect(_on_dirt_dug)
+	if freeze:
+		print("stop sign: buried again at %s. it waits." % global_position)
+	else:
+		print("stop sign: free from the start. it says STOP. nothing stops.")
+
+
+## Last known pose wins: save on reveal and on tree exit (quit), load on boot.
+func _save_state() -> void:
+	var f := FileAccess.open(STATE_PATH, FileAccess.WRITE)
+	if f == null:
+		return
+	var q := global_basis.get_rotation_quaternion()
+	var p := global_position
+	f.store_string(JSON.stringify({
+		"pos": [p.x, p.y, p.z],
+		"quat": [q.x, q.y, q.z, q.w],
+	}))
+
+
+## Parse user://hole/state.json; {} if absent or malformed.
+func _load_state() -> Dictionary:
+	if not FileAccess.file_exists(STATE_PATH):
+		return {}
+	var f := FileAccess.open(STATE_PATH, FileAccess.READ)
+	if f == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	if not (parsed is Dictionary) or not parsed.has("pos"):
+		return {}
+	var pos: Array = parsed["pos"]
+	var quat: Array = parsed["quat"]
+	if pos.size() < 3 or quat.size() < 4:
+		return {}
+	return {"pos": Vector3(pos[0], pos[1], pos[2]), "quat": Quaternion(quat[0], quat[1], quat[2], quat[3])}
+
+
+## Final pose on quit -- last known position wins at next boot.
+func _exit_tree() -> void:
+	if materialized:
+		_save_state()
 
 
 ## O(1) near-last-erase gate: only digs near the sign trigger a voxel probe.
@@ -49,7 +105,38 @@ func _check_reveal() -> void:
 		if vt.get_voxel(_floor_voxel(probe_center + offset)) != TYPE_AIR:
 			return
 	freeze = false
+	_save_state()
 	print("stop sign: revealed. it says STOP. nothing stops.")
+
+
+## True if any cell the sign's world AABB overlaps is solid -- it is buried.
+func _intersects_solid(terrain: VoxelTerrain) -> bool:
+	var vt := terrain.get_voxel_tool()
+	vt.channel = VoxelBuffer.CHANNEL_TYPE
+	var aabb := _world_aabb()
+	for x in range(floori(aabb.position.x), floori(aabb.end.x) + 1):
+		for y in range(floori(aabb.position.y), floori(aabb.end.y) + 1):
+			for z in range(floori(aabb.position.z), floori(aabb.end.z) + 1):
+				if vt.get_voxel(Vector3i(x, y, z)) != TYPE_AIR:
+					return true
+	return false
+
+
+## Conservative world box: the mesh AABB's 8 corners through its global transform.
+func _world_aabb() -> AABB:
+	var aabb := _mesh.get_aabb()
+	var xf := _mesh.global_transform
+	var mn := Vector3.INF
+	var mx := -Vector3.INF
+	for i in 8:
+		var corner := Vector3(
+			aabb.position.x + (aabb.size.x if i & 1 else 0.0),
+			aabb.position.y + (aabb.size.y if i & 2 else 0.0),
+			aabb.position.z + (aabb.size.z if i & 4 else 0.0))
+		var w := xf * corner
+		mn = mn.min(w)
+		mx = mx.max(w)
+	return AABB(mn, mx - mn)
 
 
 ## OBJ props arrive at arbitrary export scale: normalize the mesh to life size.

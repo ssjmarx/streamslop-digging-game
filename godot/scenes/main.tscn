@@ -86,7 +86,7 @@ mesh = ExtResource("9_signmesh")
 stream = ExtResource("8_music")
 script = ExtResource("6_bgm")
 
-[node name="Diglog" type="Node" parent="." unique_id=949684743]
+[node name="Diglog" type="Node" parent="." unique_id=949684743 groups=["diglog"]]
 script = ExtResource("7_diglog")
 
 [node name="Ambience" type="Node3D" parent="."]

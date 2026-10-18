@@ -85,19 +85,14 @@ func swing_query(range_m: float) -> Dictionary:
 		"normal": hit.normal,
 		"distance": from.distance_to(hit.position),
 		"collider": hit.collider,
-		"radius": GameState.dig_radius(),   # the strike sphere's width -- defined HERE, once
+		"radius": (get_node_or_null("/root/GameState") as Node).dig_radius(),   # width defined HERE, once; runtime lookup so -s probes compile
 	}
 
 
-## The targeting function: dirt cells whose centers are in the strike sphere -- the glow draws it, the strike erases it.
-func targeted_voxels(center: Vector3, radius: float) -> Array[Vector3i]:
+## The one rule, static so the replayer derives exactly what the sight erases.
+static func cells_in_sphere(vt: VoxelTool, center: Vector3, radius: float) -> Array[Vector3i]:
 	var cell := Vector3i(floori(center.x), floori(center.y), floori(center.z))
 	var out: Array[Vector3i] = []
-	var terrain := _find_terrain()
-	if terrain == null:
-		return out
-	var vt := terrain.get_voxel_tool()
-	vt.channel = VoxelBuffer.CHANNEL_TYPE   # every read names its channel
 	var reach := ceili(radius)
 	for x in range(cell.x - reach, cell.x + reach + 1):
 		for y in range(cell.y - reach, cell.y + reach + 1):
@@ -112,6 +107,16 @@ func targeted_voxels(center: Vector3, radius: float) -> Array[Vector3i]:
 					continue   # air: nothing to take; bedrock: the rim wall refuses
 				out.append(Vector3i(x, y, z))
 	return out
+
+
+## Swing-time targeting: the sight's terrain through the shared static rule.
+func targeted_voxels(center: Vector3, radius: float) -> Array[Vector3i]:
+	var terrain := _find_terrain()
+	if terrain == null:
+		return []
+	var vt := terrain.get_voxel_tool()
+	vt.channel = VoxelBuffer.CHANNEL_TYPE   # every read names its channel
+	return cells_in_sphere(vt, center, radius)
 
 
 ## Crosshair: #15 in swing range, #16 otherwise; parks at the ray end on a miss.

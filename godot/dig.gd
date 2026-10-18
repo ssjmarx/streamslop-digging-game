@@ -26,6 +26,7 @@ var _last_swing_msec := -100000   # far past: the session's first click pays sta
 
 @onready var _body: Node = get_parent()   # the player CharacterBody3D; duck-typed on purpose
 @onready var _aim: Node = $Aim   # the sight: one ray shared by the swing and the instruments
+@onready var _diglog: Node = get_tree().get_first_node_in_group("diglog")   # the save file's writer
 @onready var _clang: AudioStreamPlayer3D = $Clang
 @onready var _dig_sfx: AudioStreamPlayer = $HitDig
 @onready var _whiff: AudioStreamPlayer = $Whiff
@@ -101,6 +102,7 @@ func _strike(hit: Dictionary) -> void:
 	GameState.best_depth = minf(GameState.best_depth, depth)
 	DirtBus.dirt_dug.emit(amount, _floor_voxel(hit.position), depth, 1)
 	DirtBus.depth_changed.emit(depth, 1)
+	_diglog.append_sphere(hit.position, hit.radius)
 	if not _body.is_on_floor() and _body.jumped:
 		_body.velocity.y = maxf(_body.velocity.y, dig_jump_velocity)   # flight is bounded by dirt
 		_body.notify_dig_jump()   # a dig-jump is a jump: the chain arms the next one
