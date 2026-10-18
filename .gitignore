@@ -2,6 +2,9 @@
 .godot/
 .aider*
 
+# Blender backup churn (sources live in blender/; the .blend1 is scratch)
+*.blend1
+
 # Exported builds (the build ritual drops zips here; they live on the
 # shared folder, not in history)
 dist/

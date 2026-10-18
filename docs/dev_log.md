@@ -685,3 +685,47 @@ clicks clear the gap naturally, and shovel jumping is untouched. Lesson: when a
 guard breaks the thing it protects, the fix is not a smarter guard — it is the
 dumbest guard that cannot break it.
 
+## Entry #4 — 2026-10-18 — the garment-fitting rollback; the wardrobe pushed up (0.0.4 amended)
+
+**The rollback.** Automated garment fitting was ruled a failure and left history: the
+repo reset to `f094a5e` (0.0.4 pt0), the fitting commit (`b6baa49`) force-rewritten out
+of both remotes (gitea and github), the uncommitted fitter WIP discarded —
+unrecoverable, and mourned by nobody. Provenance restored from memory and reflog: the
+runtime coverage cull (Addendum 16) worked on the female body + Ranger set but was a
+disaster on the male body + Peasant clothes, and that disaster triggered the automation
+attempt — an offline Blender-side fitter, an independent checker that kept catching the
+fitter lying about itself (blind BVH normals, a phantom mannequin inside the "body"
+union), the Fitment Ruling (clothes are overrides on the body; seam work is human),
+and finally fitted artifacts worn as pure overlays. The numbers got good. The strategy
+stayed wrong: the geometry decisions kept migrating from eyes that can see to scripts
+that cannot. Rolled back to the last-known-good wearing system (the coverage cull;
+`body_cull.gd` resurrected) — corey confirmed the dressed character renders perfectly,
+which is the whole verdict in one sentence.
+
+**The ruling: the wardrobe moves up.** Ladder amended at the pt0 boundary:
+0.0.4 THE WARDROBE, 0.0.5 THE KIOSK, 0.0.6 CREDITS, 0.0.7 THE MACHINE; FOLDER, SEAM,
+PHONE CALL, RELEASE unchanged (ROADMAP §3/§5 amended same day; the kiosk's exit tests
+moved intact). The pedestal select and the sign mirror remain wardrobe scope for later
+pts; the guest CONTRIBUTED HUD moved to THE SEAM, where it always belonged.
+
+**The doctrine: the automation boundary.** The fitter failed because it automated
+geometry; the boundary is now scope law, written into ROADMAP §5's wardrobe entry:
+- Geometry is human, in Blender. Attaching pieces (plain Armature Deform — the
+  shipped weights are correct; Automatic Weights would ruin them), the head/body
+  split, seam and silhouette repair, cross-gender ports, the per-piece hide
+  decisions, and the Pose-Mode eye test before every export.
+- Offline tooling checks, never fixes. `tools/wardrobe_check.py` validates the
+  exports — a gate, not an oracle. (The fitter's checker earned its keep; the
+  fitter did not. Only the checker idea survives.)
+- Runtime is state, never geometry. Visibility from an authored slot table, body
+  swap, menu, persistence. No reparenting, no re-weighting, no triangle culling
+  in the dev path. `body_cull.gd` stays in the tree, dormant and documented — it
+  is the mod-coverage mechanism for THE FOLDER, where "mods without coverage
+  data overlay harmlessly" still rules.
+
+**The mechanism** (GDD §6b amended same day): one GLB per body, every piece inside,
+all skinned to the single `Armature` (UAL binds by the name); pieces wear as
+overlays; hiding is authored show/hides per slot (head/torso/arms/legs/feet/
+accessory/hair); sources live in `blender/` at the repo root. First export target:
+the female body + Ranger set, parity with today's dressed character.
+

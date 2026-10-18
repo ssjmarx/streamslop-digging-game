@@ -39,26 +39,32 @@
 | 0.0.1   | DIRT           | Can we stand on dirt?                                      |
 | 0.0.2   | THE VERB       | Is digging fun for ten minutes? (incl. dig-jump)           |
 | 0.0.3   | MEMORY         | Does the hole survive a restart? (+ compaction benchmark)  |
-| 0.0.4   | THE KIOSK      | Is there a loop? (shopkeeper, refill, prestige, stopwatch) |
-| 0.0.5   | CREDITS        | Is every asset accounted for?                              |
-| 0.0.6   | THE MACHINE    | Can a machine dig?                                         |
-| 0.0.7   | THE WARDROBE   | Can you pick a guy?                                        |
+| 0.0.4   | THE WARDROBE   | Can you pick a guy? (bodies + pieces, Blender-authored)    |
+| 0.0.5   | THE KIOSK      | Is there a loop? (shopkeeper, refill, prestige, stopwatch) |
+| 0.0.6   | CREDITS        | Is every asset accounted for?                              |
+| 0.0.7   | THE MACHINE    | Can a machine dig?                                         |
 | 0.0.8   | THE FOLDER     | Can a stranger's guy appear without code?                  |
 | 0.0.9   | THE SEAM       | Can two people dig one hole? (backhoe replication too)     |
 | 0.0.10  | THE PHONE CALL | Can a stranger join without talking to us?                 |
 | 0.3.0   | THE RELEASE    | Is the joke legible? (dig + a giant co-op quake 3 level)   |
 
+(Amended at the 0.0.4 pt0 boundary, ruling 2026-10-18: THE WARDROBE moved up to
+0.0.4; THE KIOSK stepped to 0.0.5, CREDITS to 0.0.6, THE MACHINE to 0.0.7. The
+kiosk's exit tests moved intact — dev_log Entry #4.)
+
 0.1.0–0.2.9 are not carved into milestones yet; the ladder between the phone call and
 the release is drafted at the 0.1.0 gate (ruling 2026-10-17: the launch moved here
 from 0.1.0).
 
-Dependency chain (nothing starts before its parents pass):
+Dependency chain (nothing starts before its parents pass; redrawn at the amendment —
+the wardrobe leads, the machine branch follows the kiosk, the folder hangs off the
+wardrobe):
 
-    DIRT ──► THE VERB ──► MEMORY ──► THE KIOSK ──────────────────────► THE RELEASE
-                 │                    │
-                 │                    └──► THE MACHINE ──► THE SEAM ──┤
-                 │                                                    ▼
-                 └──► CREDITS ──► THE WARDROBE ──► THE FOLDER ──► THE SEAM ──► THE PHONE CALL ──► THE RELEASE
+    DIRT ──► THE VERB ──► MEMORY ──► THE WARDROBE ──► THE KIOSK ─────────────────────► THE RELEASE
+                                       │                │                              ▲
+                                       │                └──► CREDITS ──► THE MACHINE ──► THE SEAM ──► THE PHONE CALL
+                                       │                                                     ▲
+                                       └──► THE FOLDER ─────────────────────────────────────┘
 
 ## §4 The feel checklist (run at every gate, 2 minutes, by hand)
 
@@ -127,7 +133,24 @@ under 10s for a weekend's worth of dirt ☐ ~~save size is surfaced somewhere
 (braggable)~~ — dropped at the 0.0.3 gate (ruling 2026-10-17: the HUD readout was
 already rejected in pt1; nothing surfaces the number — dev_log Addendum 23).
 
-### v0.0.4 — THE KIOSK
+### v0.0.4 — THE WARDROBE
+**Question:** Can you pick a guy?
+**Scope:** the wardrobe, pushed up (amendment 2026-10-18): bodies and pieces
+authored in Blender — one GLB per body, every piece skinned to the one armature,
+worn as overlays, hidden by an authored slot table; the debug wardrobe menu
+(body swap, per-slot cycling, RANDOMIZE), persistence, ghost parity. The
+automation boundary is scope law: geometry is human in Blender, tools only check
+(`tools/wardrobe_check.py`), runtime is state only (dev_log Entry #4).
+Select-screen presentation (pedestal, LOCK IN, the mirror at the sign) closes
+the milestone at a later pt.
+**Exit tests:** ☐ the debug menu swaps male/female live ☐ every slot cycles
+independently; mixed kits bend together in FPV and TPV ☐ the choice persists
+across restart ☐ the ghost stays dressed identically ☐ dig-jump and swing are
+clean in mixed kit ☐ the Ranger set on the female body reads identical to the
+pre-patch character ☐ attr_lint green on the new GLBs ☐ the placeholder renders
+for missing models, credited.
+
+### v0.0.5 — THE KIOSK
 **Question:** Is there a loop?
 **Scope:** the shopkeeper NPC (the launch NPC), sell-all, the pour animation
 (deepest-first, the waiter lift), diglog wipe + pristine revert, Long Shovel on the
@@ -143,7 +166,7 @@ purchasable, equippable, useless — uselessness verified, because a scam you do
 verify is just a bug ☐ ergonomic stats byte-identical to Regular (regression forever)
 ☐ shopkeeper's fear anim plays at the rim; he never descends.
 
-### v0.0.5 — CREDITS
+### v0.0.6 — CREDITS
 **Question:** Is every asset accounted for?
 **Scope:** the attribution law live end to end — lower thirds, the completion menu,
 catalog filled out to launch scope (~40 entries), first-boot popup.
@@ -151,7 +174,7 @@ catalog filled out to launch scope (~40 entries), first-boot popup.
 green) ☐ lower thirds fire on first sight for font, sky, dirt, shovel, sign ☐
 completion menu N/M matches reality ☐ the placeholder is credited.
 
-### v0.0.6 — THE MACHINE
+### v0.0.7 — THE MACHINE
 **Question:** Can a machine dig?
 **Scope:** 9km flat terrain + the backhoe: VehicleBody3D (Jolt), six levers,
 stabilizers, tip-freeze with persistence, fuel, scoops → `DigAuthority.strike()`, the
@@ -169,14 +192,6 @@ unfreezes, settles, drivable, fuel intact ☐ tipped+buried → excavation yield
 ornament, still tipped, forever ☐ sell mid-excavation → re-burial; the fossil loop is
 repeatable ☐ rider at entomb → ejected and lifted, never deleted.
 
-### v0.0.7 — THE WARDROBE
-**Question:** Can you pick a guy?
-**Scope:** character select (six avatars, pedestal, RANDOMIZE, LOCK IN), the mirror
-at the sign, the guest CONTRIBUTED HUD.
-**Exit tests:** ☐ the game opens on character select ☐ all six lower thirds fire
-while browsing ☐ LOCK IN persists across restart ☐ avatar swap at the sign works ☐
-the placeholder renders for missing models, credited.
-
 ### v0.0.8 — THE FOLDER
 **Question:** Can a stranger's guy appear without code?
 **Scope:** `user://avatars/` local modding — `model.gltf` + `portrait.png` +
@@ -190,7 +205,8 @@ rig → placeholder, never a crash ☐ portraits show in select (and later on th
 **Question:** Can two people dig one hole?
 **Scope:** `DigAuthority` netcode — host authority, guest prediction, `by_peer` on
 every signal; player replication (sync position/anim/avatar_id/hash/name, never the
-mesh); backhoe replication; the competitive shopkeeper.
+mesh); backhoe replication; the guest CONTRIBUTED HUD (moved here from the old
+wardrobe milestone at the 0.0.4 amendment); the competitive shopkeeper.
 **Exit tests:** ☐ two people dig one hole, voxel-identical on both ends ☐ guest
 swings inside the 0.45s window are rejected host-side ☐ host sells with a guest at
 depth → guest lifted to the rim, watches the pour to the end, CONTRIBUTED survives

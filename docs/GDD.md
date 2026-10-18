@@ -130,10 +130,15 @@ ground but also it's a giant co-op quake 3 level."
   Left/right arrows, rotating pedestal, name entry, RANDOMIZE, LOCK IN.
 - Roster: Adventurer, Knight, Robot, Bandit, Zombie Businessman, and Shovelhead — the
   one original asset in the entire game ("corey", all rights reserved).
-- Outfits declare per-piece coverage: each piece names the bone regions it replaces,
-  and body skin is culled under covered pieces; pieces with no coverage overlay the
-  body (hoods show the face, belts ride the shirt). Mods without coverage data
-  overlay harmlessly — never naked by default.
+- Wardrobe pieces are authored in Blender as overlays on their body: every piece
+  rides the shared skeleton with its original weights, and wearing is mesh
+  visibility from an authored table — slots (head, torso, arms, legs, feet,
+  accessory, hair), one piece per slot, a piece hiding only whole meshes it
+  covers (a tunic hides nothing, a hood shows the face, two torsos conflict and
+  the later equip wins). No runtime geometry: no reparenting, no re-weighting,
+  no triangle culling in the dev path. Mods without any wardrobe data overlay
+  harmlessly — never naked by default. Seam, silhouette, and cross-gender work
+  is human, in Blender.
 - Change your avatar later at the sign ("the mirror is at the sign" — sole dev
   comment on the matter).
 - Local modding from day one: a folder in `user://avatars/` with `model.gltf`,
