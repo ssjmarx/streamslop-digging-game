@@ -815,6 +815,18 @@ manual-process solution, as intended. Also: the O menu swings a dressing lens
 — in front of the body, player framed screen-right, position-tracking,
 yaw-ignoring, distance/height/offset as live dials.
 
+**Addendum 33 — automate the choiceless.** The doctrine gains its clarifying
+clause. The normal pass (NormRef + Data Transfer, the split-mesh fix) was
+mechanical from birth: rejoin the coincident boundary verts, smooth,
+transfer, delete — zero decisions, same output every time, eye-verifiable in
+one glance. That is compilation, not authoring, and it is now
+`blender/fix_normals.py`: select the five regions, run, look. The boundary
+holds: anything with a knob that changes what you see (fit, caps,
+silhouette, thresholds) stays human; the checker-vs-fixer law is untouched
+(this script runs in Blender at authoring time, beside the human, not in
+any gate). The fitter remains the cautionary tale; this is the healthy
+example.
+
 **Addendum 31 — CI retired; the world freezes for the mirror.** The workflow
 file left the repo: gitea never ran it, github ran it faithfully and
 redundantly — the gates it mirrored (attr_lint et al) run locally at every
