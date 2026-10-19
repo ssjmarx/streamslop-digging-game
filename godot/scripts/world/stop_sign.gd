@@ -7,7 +7,6 @@ extends RigidBody3D
 
 const FACE_UP_ROTATION := Vector3(-90.0, 0.0, 0.0)   # the model faces +Z; -90 about X aims it at the sky
 const TYPE_AIR := 0   # TYPE-channel value of empty (library index 0 in main.tscn)
-const STATE_PATH := "user://hole/state.json"   # MEMORY: the sign's persisted pose
 
 @export_group("Stop Sign")
 ## Meters, post-to-octagon-top: normalized from the OBJ's AABB.
@@ -32,10 +31,12 @@ func materialize(terrain: VoxelTerrain) -> void:
 	if materialized:
 		return
 	materialized = true
-	var stored := _load_state()
+	var stored := GameState.read_key("sign")
 	if not stored.is_empty():
-		global_position = stored.pos
-		global_basis = Basis(stored.quat)
+		var pos: Array = stored["pos"]
+		var quat: Array = stored["quat"]
+		global_position = Vector3(pos[0], pos[1], pos[2])
+		global_basis = Basis(Quaternion(quat[0], quat[1], quat[2], quat[3]))
 	else:
 		rotation_degrees = FACE_UP_ROTATION
 	_normalize_mesh()
@@ -48,34 +49,14 @@ func materialize(terrain: VoxelTerrain) -> void:
 		print("stop sign: free from the start. it says STOP. nothing stops.")
 
 
-## Last known pose wins: save on reveal and on tree exit (quit), load on boot.
+## Save on reveal and on tree exit; the pose lives under GameState's "sign" key.
 func _save_state() -> void:
-	var f := FileAccess.open(STATE_PATH, FileAccess.WRITE)
-	if f == null:
-		return
 	var q := global_basis.get_rotation_quaternion()
 	var p := global_position
-	f.store_string(JSON.stringify({
+	GameState.write_key("sign", {
 		"pos": [p.x, p.y, p.z],
 		"quat": [q.x, q.y, q.z, q.w],
-	}))
-
-
-## Parse user://hole/state.json; {} if absent or malformed.
-func _load_state() -> Dictionary:
-	if not FileAccess.file_exists(STATE_PATH):
-		return {}
-	var f := FileAccess.open(STATE_PATH, FileAccess.READ)
-	if f == null:
-		return {}
-	var parsed: Variant = JSON.parse_string(f.get_as_text())
-	if not (parsed is Dictionary) or not parsed.has("pos"):
-		return {}
-	var pos: Array = parsed["pos"]
-	var quat: Array = parsed["quat"]
-	if pos.size() < 3 or quat.size() < 4:
-		return {}
-	return {"pos": Vector3(pos[0], pos[1], pos[2]), "quat": Quaternion(quat[0], quat[1], quat[2], quat[3])}
+	})
 
 
 ## Final pose on quit -- last known position wins at next boot.

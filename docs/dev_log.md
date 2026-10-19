@@ -748,3 +748,55 @@ there when it exists. The law itself lives in GDD §6b. First export
 `wardrobe_female.glb`: 20 skinned pieces, 65 joints, one armature — gate green
 after the checker fixes above.
 
+## Entry #5 — 2026-10-18 — the wardrobe runs: the pipeline proven in-engine
+
+**The asset.** `wardrobe_female.glb` graduated from blender/ (local-only) into
+godot/assets/characters/wardrobe/ — 93 MB with embedded textures, which Godot's
+importer extracts as 17 sibling PNGs (all cataloged; attr_lint went 50 → 68
+green). Twenty skinned pieces, 65 joints, one armature, names conforming to
+the naming grammar at the wardrobe_check gate.
+
+**The runtime.** `player/wardrobe.gd`: the grammar IS the data — pieces are
+discovered from the instantiated avatar, two-token names become exclusive
+slots, three-plus become free accessories, fixed meshes always show; every
+mutation is a visibility pass over avatar AND ghost (the shadow stays dressed,
+Addendum 16's ruling, kept). `ui/wardrobe_menu.gd`: the O debug menu — slot
+cyclers (bare is always an option), accessory checkboxes, a hair-color row.
+While open the mouse is free, dig.gd stands down on `GameState.wardrobe_open`,
+and walking stays live — dressing while pacing is the whole test.
+
+**The tint port.** The old styling machinery's ATTACH half died (hairs ride
+the GLB now); its TINT half was ruled state, not geometry, and survives: a
+12-swatch palette (Sims-arc order, multiplier-friendly values, Brown default =
+parity) applies to `Hair_*`, with `Eyebrows` — brows and lashes are one mesh —
+riding at 0.75 of the hair color, the exact ratio the old constants encoded.
+Materials duplicate off the GLB's own surfaces once, then recolor in place;
+nothing external is loaded. Future ruling recorded: clothes go grayscale in
+Blender and modulate in-engine like hair — out of scope until the loop is
+proven.
+
+**The save graduation.** corey ruled the wardrobe must persist, and on review
+that meant graduating the save itself: user://hole/state.json existed only as
+the stop sign's private pose file — GameState now owns it end to end
+(state + wardrobe + sign keys), with dirt/best_depth arriving over DirtBus
+(Addendum 26's shape, arriving early by ruling: "the game already saves; a
+half-save is incoherent"). Compat reads degrade, never crash; the legacy
+sign-only file reads as the sign on first boot. Verified live: a fresh headless
+boot wrote the full graduated shape, default kit persisted.
+
+**The excision.** player_controller lost the whole coverage-cull and
+attach-outfit layer — OUTFIT_COVERAGE, BODY_MESH_NODES, the hair piece table,
+the pose dials, the strictness dial — plus `_attach_outfit`,
+`_attach_hair_piece`, `_style_builtins` and friends (~250 lines). The FP head
+tuck got simpler: the Head-bone scale now tucks head, hairs, and hood in one
+move. body_cull.gd and its probe stay DORMANT (the 0.0.8 mod-coverage
+mechanism; the consts say so). The dev probes probe_body_cull /
+probe_avatar_dump still reference the old scenes — manual tools, untouched,
+revisit at THE FOLDER.
+
+Gates: rescan ✓ (new uids), audit ✓ (25 files / 172 functions), attr_lint ✓
+(68), headless smoke ✓ — boot, replay, spawn, shovel on `hand_r`, UAL1+2
+bound, zero script errors (the --quit-after ObjectDB-leak warning is a
+hard-exit artifact, not a runtime fault). Eyes-only parity pass is corey's,
+in-engine.
+

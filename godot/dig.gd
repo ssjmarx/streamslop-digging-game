@@ -52,7 +52,7 @@ func _physics_process(delta: float) -> void:
 		if _pending_frames < 0:
 			_resolve_swing()   # the windup is paid: the chain's first strike lands
 		return   # no new swings while the startup window runs
-	if _cooldown == 0.0 and Input.is_action_pressed("dig"):
+	if _cooldown == 0.0 and not GameState.wardrobe_open and Input.is_action_pressed("dig"):
 		_swing()
 
 
