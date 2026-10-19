@@ -815,6 +815,21 @@ manual-process solution, as intended. Also: the O menu swings a dressing lens
 — in front of the body, player framed screen-right, position-tracking,
 yaw-ignoring, distance/height/offset as live dials.
 
+**Addendum 34 — the weights pass: the manual element, automated.** corey's
+diagnosis confirmed: the outfit packs are weighted for the Regular bodies,
+and tight shrinkwrapped fits to the heroic body expose the divergence only
+in motion — static fits, moving fights. Fix: transfer the heroic skin's own
+vertex groups onto the tight-fitted garments (Data Transfer, nearest-face)
+— the exact Case B of the original tutorial, automated under the
+automate-the-choiceless clause: geometry stays exactly where the fit put
+it; only the weights are re-derived from the coincident reference. Scoping
+law: pieces that ride the skin get the transfer; intentionally offset
+pieces (hood, pauldrons, belts) keep their pack weights, which are authored
+for their floating positions. The macro is replace-semantics — safe to
+re-run, unlike stacked normal passes. `blender/transfer_weights.py` +
+README section; body-agnostic already, wave 2 expected to need the same
+pass on the male side.
+
 **Addendum 33 — automate the choiceless.** The doctrine gains its clarifying
 clause. The normal pass (NormRef + Data Transfer, the split-mesh fix) was
 mechanical from birth: rejoin the coincident boundary verts, smooth,
