@@ -815,3 +815,17 @@ manual-process solution, as intended. Also: the O menu swings a dressing lens
 — in front of the body, player framed screen-right, position-tracking,
 yaw-ignoring, distance/height/offset as live dials.
 
+**Addendum 31 — CI retired; the world freezes for the mirror.** The workflow
+file left the repo: gitea never ran it, github ran it faithfully and
+redundantly — the gates it mirrored (attr_lint et al) run locally at every
+change, which is the only place they can be acted on. The credits gate lives;
+the cloud mirror does not. GDD §2/§7/§13 and .clinerules amended. Also
+shipped: the O menu now holds the world's inputs (movement, jump, P, wheel,
+tier cycling — gravity and slides continue, the body stays put), and the
+dressing lens is a real scene node under Mesh, in front of the body in
+body-space, framed screen-right, eye-tunable in the Remote tab — the camera
+comes to the body, the body never turns, and the behind-bug is structurally
+impossible. And the seam-fix tier 1: garment pieces render double-sided
+(cull_disabled on their duplicated materials) — openings show cloth interior
+instead of the world; tier 2 caps await corey's list.
+

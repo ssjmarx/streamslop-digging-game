@@ -29,14 +29,15 @@ netcode seams. What may never change is the player-facing experience
 - Nothing ever happens in the hole.
 - The clang.
 
-Enforcement: corey's conscience (corey is the human, in GDD fiction). Not
-CI. CI enforces exactly one real thing -- the credits.
+Enforcement: corey's conscience (corey is the human, in GDD fiction). There
+is no CI -- removed 0.0.4 pt3.2 as redundant; the gates run locally
+(attr_lint, wardrobe_check, build_project_map, the feel checklist).
 
 ## Laws on every session
 
 - There are no tests. There will never be tests. The feel checklist
   (`docs/ROADMAP.md` §4) is the entire regression suite; a failed
-  checkbox blocks the tag. CI enforces nothing about gameplay.
+  checkbox blocks the tag. Nothing automated enforces gameplay.
 - Autoloads: DirtBus, GameState, Attribution -- in that order. DirtBus
   is the only bus. Signals may be appended, never removed. There will
   never be a second bus.

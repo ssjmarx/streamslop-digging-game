@@ -29,8 +29,9 @@ never change is the player-facing experience:
 - Nothing ever happens in the hole.
 - The clang.
 
-Enforcement: corey's conscience. CI enforces only attribution (§7) — the credits matter
-more than the mechanic; this was always true of the genre.
+Enforcement: corey's conscience. The credits gate (`tools/attr_lint.py`) runs
+locally at every change — there is no CI (removed 0.0.4 pt3.2, redundant). The
+credits matter more than the mechanic; this was always true of the genre.
 
 The corollary: every future system integrates with digging by *reading* DirtBus, never
 by changing it. If a future feature needs digging to change: it doesn't.
@@ -250,8 +251,8 @@ everything in the game.
 - Every asset a player can see is introduced by a TV-style lower third — name — author —
   license — on a queue, ~2.5s cadence.
 - `godot/assets/catalog.json` is the law file: every asset file under `godot/assets/`
-  must carry a claim in it. CI enforces exactly this and nothing else
-  (`tools/attr_lint.py`).
+  must carry a claim in it. `tools/attr_lint.py` enforces exactly this and
+  nothing else, locally at every change.
 - The font is credited on boot, by the HUD rendered in it. The engine's
   ProceduralSkyMaterial is credited when the player looks up. The dirt texture credits
   itself on first dig. The magenta placeholder is credited as "unknown/unknown" — the
@@ -339,8 +340,9 @@ Last bullet: honest for exactly one build. Screenshot it.
   future — checks in for free. Patch 12's naval cannon that happens to hit the hole
   will excavate the backhoe. We will not have thought about it. It will be correct
   anyway.
-- CI enforces exactly one real thing: the credits (§7). CI enforces nothing about
-  gameplay. There are no tests. There will never be tests. The feel checklist
+- There is no CI (removed 0.0.4 pt3.2 — it ran the credits check on github,
+  redundantly with the local gates). The credits gate (`attr_lint`) runs
+  locally. There are no tests. There will never be tests. The feel checklist
   (ROADMAP §4) is the regression suite.
 - Version stays 0.x until the developer gets bored. 1.0 criteria: boredom. Not
   measurable. Not our problem.

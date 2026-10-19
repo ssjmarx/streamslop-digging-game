@@ -59,13 +59,6 @@ extends CharacterBody3D
 @export var pitch_limit := 1.4
 ## Downward pitch limit in degrees (the camera clamps at -85; you may not look past it).
 @export var pitch_down_limit_deg := 85.0
-@export_group("Dressing Camera")
-## Meters in front of the body the dressing lens sits (the O menu).
-@export var dressing_cam_distance := 2.0
-## Meters above the floor the dressing lens sits.
-@export var dressing_cam_height := 1.35
-## Meters the aim shifts to the lens' left, framing the player screen-right.
-@export var dressing_cam_offset := 0.45
 @export_group("FP Camera")
 ## Meters the lens floats ahead of the eye before the collision clamp pulls it back. Live dial.
 @export var fp_arm_length := 0.3
@@ -160,7 +153,7 @@ var _shovel_diagonal := 0.0   # raw mesh diagonal at attach; scale normalization
 var _wardrobe: RefCounted = null   # the wardrobe state; applies visibility + tint
 var _ghost_root: Node3D = null     # the shadow ghost tree; dressed identically
 var _menu: CanvasLayer = null      # the O debug menu, created once the avatar loads
-var _dressing_cam: Camera3D = null   # the O-menu lens; created on first open
+@onready var _dressing_cam: Camera3D = $Mesh/DressingCam   # scene node: the framing IS the transform
 var _mantle_chain_until_msec := 0   # while set, the step search height is the chain boost
 var _mantle_cam_drop := 0.0   # lens catch-up debt after a mantle teleport (meters)
 var _skeleton: Skeleton3D   # the avatar's skeleton, cached at load
@@ -213,6 +206,8 @@ func spawn_avatar() -> void:
 
 ## Mouse + action routing: rig yaw, both-camera pitch, P flip, wheel zoom, Esc.
 func _unhandled_input(event: InputEvent) -> void:
+	if GameState.wardrobe_open:
+		return   # the O-menu owns the inputs; the world holds its breath
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		rig.rotate_y(-event.relative.x * mouse_sens)   # mouse yaws the camera rig only
 		_pitch_angle = clampf(_pitch_angle - event.relative.y * mouse_sens, -deg_to_rad(pitch_down_limit_deg), pitch_limit)
@@ -231,14 +226,15 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Frame physics: gravity, crouch state, movement, facing, FP slide, animation.
 func _physics_process(delta: float) -> void:
+	var frozen: bool = GameState.wardrobe_open   # the O-menu holds movement; gravity slides on
 	if not is_on_floor():
 		velocity.y -= gravity * delta
-	if Input.is_action_just_pressed("jump") and is_on_floor():
+	if not frozen and Input.is_action_just_pressed("jump") and is_on_floor():
 		velocity.y = jump_velocity
 		jumped = true
 		DirtBus.player_noise.emit(1.4, 1)   # nobody is listening. yet.
-	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-	var want_crouch := Input.is_action_pressed("crouch")   # hold, not toggle (ruling)
+	var input_dir := Vector2.ZERO if frozen else Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var want_crouch := not frozen and Input.is_action_pressed("crouch")   # hold, not toggle (ruling)
 	if want_crouch != crouching:
 		_set_crouch(want_crouch)
 	var speed := crouch_speed if crouching else (walk_speed if Input.is_action_pressed("walk") else run_speed)
@@ -343,20 +339,10 @@ func _apply_camera_mode() -> void:
 	_update_head_tuck()
 
 
-## The dressing lens: in front of the body, player framed screen-right; restores on close.
+## The dressing lens: a scene node under Mesh, in front of the body in body-space; O makes it current.
 func set_dressing_cam(on: bool) -> void:
-	if on:
-		if _dressing_cam == null:
-			_dressing_cam = Camera3D.new()
-			add_child(_dressing_cam)
-		var forward := -rig.global_transform.basis.z
-		var origin := global_position + Vector3.UP * dressing_cam_height \
-				+ forward * dressing_cam_distance
-		var chest := global_position + Vector3.UP * 1.1
-		var right := forward.cross(Vector3.UP)
-		_dressing_cam.look_at_from_position(origin, chest - right * dressing_cam_offset, Vector3.UP)
-		_dressing_cam.current = true
-	else:
+	_dressing_cam.current = on
+	if not on:
 		_apply_camera_mode()
 
 

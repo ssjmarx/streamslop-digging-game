@@ -204,9 +204,27 @@ func _apply() -> void:
 			var slot := _slot_of(piece)
 			if slot != "":
 				mesh.visible = _slots.get(slot, "") == piece
+				_double_sided(mesh)
 			elif _is_accessory(piece):
 				mesh.visible = _accessories.get(piece, false)
+				_double_sided(mesh)
 		_style(meshes)
+
+
+## Garment shells are open; render their far interior instead of the world through a rim.
+func _double_sided(mesh: MeshInstance3D) -> void:
+	if mesh.mesh == null:
+		return
+	for s in mesh.mesh.get_surface_count():
+		var mat := mesh.get_surface_override_material(s)
+		if mat == null:
+			var src := mesh.mesh.surface_get_material(s)
+			if src == null:
+				continue
+			mat = src.duplicate()
+			if mat is BaseMaterial3D:
+				mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+			mesh.set_surface_override_material(s, mat)
 
 
 ## Slot word for a piece name; "" when the name is not a slot piece.

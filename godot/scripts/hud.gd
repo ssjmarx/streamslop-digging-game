@@ -10,6 +10,8 @@ extends CanvasLayer
 
 ## Debug tier cycler (ruling 2026-10-17): [ and ] step GameState's tier; the kiosk (0.0.4) replaces this.
 func _unhandled_input(event: InputEvent) -> void:
+	if GameState.wardrobe_open:
+		return   # the O-menu owns the inputs
 	if event.is_action_pressed("shovel_prev"):
 		GameState.cycle_shovel_tier(-1)
 	elif event.is_action_pressed("shovel_next"):
