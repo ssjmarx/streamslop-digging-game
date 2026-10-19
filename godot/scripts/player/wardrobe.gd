@@ -5,7 +5,8 @@ extends RefCounted
 
 # -- Grammar (mirrored by tools/wardrobe_check.py) ------
 
-const FIXED_NAMES := ["Body_Under", "Head", "Eyes", "Eyebrows"]
+const FIXED_NAMES := ["Eyes", "Eyebrows"]
+const REGION_WORDS := ["Head", "Body", "Arms", "Legs", "Feet"]
 const HAIR_PREFIX := "Hair_"
 const HAIR_SLOT := "Hair"
 const SLOT_WORDS := ["Body", "Arms", "Legs", "Feet"]
@@ -196,6 +197,9 @@ func _apply() -> void:
 		for mesh in meshes:
 			var piece := String(mesh.name)
 			if piece in FIXED_NAMES:
+				continue
+			if piece in REGION_WORDS:
+				mesh.visible = _slots.get(piece, "") == ""   # occupied slot hides its skin
 				continue
 			var slot := _slot_of(piece)
 			if slot != "":

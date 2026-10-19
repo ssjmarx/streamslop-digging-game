@@ -59,6 +59,13 @@ extends CharacterBody3D
 @export var pitch_limit := 1.4
 ## Downward pitch limit in degrees (the camera clamps at -85; you may not look past it).
 @export var pitch_down_limit_deg := 85.0
+@export_group("Dressing Camera")
+## Meters in front of the body the dressing lens sits (the O menu).
+@export var dressing_cam_distance := 2.0
+## Meters above the floor the dressing lens sits.
+@export var dressing_cam_height := 1.35
+## Meters the aim shifts to the lens' left, framing the player screen-right.
+@export var dressing_cam_offset := 0.45
 @export_group("FP Camera")
 ## Meters the lens floats ahead of the eye before the collision clamp pulls it back. Live dial.
 @export var fp_arm_length := 0.3
@@ -153,6 +160,7 @@ var _shovel_diagonal := 0.0   # raw mesh diagonal at attach; scale normalization
 var _wardrobe: RefCounted = null   # the wardrobe state; applies visibility + tint
 var _ghost_root: Node3D = null     # the shadow ghost tree; dressed identically
 var _menu: CanvasLayer = null      # the O debug menu, created once the avatar loads
+var _dressing_cam: Camera3D = null   # the O-menu lens; created on first open
 var _mantle_chain_until_msec := 0   # while set, the step search height is the chain boost
 var _mantle_cam_drop := 0.0   # lens catch-up debt after a mantle teleport (meters)
 var _skeleton: Skeleton3D   # the avatar's skeleton, cached at load
@@ -335,6 +343,23 @@ func _apply_camera_mode() -> void:
 	_update_head_tuck()
 
 
+## The dressing lens: in front of the body, player framed screen-right; restores on close.
+func set_dressing_cam(on: bool) -> void:
+	if on:
+		if _dressing_cam == null:
+			_dressing_cam = Camera3D.new()
+			add_child(_dressing_cam)
+		var forward := -rig.global_transform.basis.z
+		var origin := global_position + Vector3.UP * dressing_cam_height \
+				+ forward * dressing_cam_distance
+		var chest := global_position + Vector3.UP * 1.1
+		var right := forward.cross(Vector3.UP)
+		_dressing_cam.look_at_from_position(origin, chest - right * dressing_cam_offset, Vector3.UP)
+		_dressing_cam.current = true
+	else:
+		_apply_camera_mode()
+
+
 ## The FP head tuck: local-view artifact only; per-instance, replication never sees it.
 func _update_head_tuck() -> void:
 	var tuck: bool = (not third_person) and fp_head_tuck
@@ -449,7 +474,7 @@ func _load_avatar() -> void:
 	GameState.set_wardrobe(_wardrobe.kit())   # persist the resolved kit (a fresh save is born here)
 	_menu = WARDROBE_MENU.new()
 	add_child(_menu)
-	_menu.bind(_wardrobe)
+	_menu.bind(_wardrobe, self)
 	anim_player.play(ANIM_IDLE, ANIM_FADE)
 
 

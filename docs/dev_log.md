@@ -800,3 +800,18 @@ bound, zero script errors (the --quit-after ObjectDB-leak warning is a
 hard-exit artifact, not a runtime fault). Eyes-only parity pass is corey's,
 in-engine.
 
+**Addendum 30 — the covering rule, finally implemented; the dressing lens.**
+The eyes-only pass found the fight the manual process was supposed to end:
+nothing hid body skin — every sleeve fought its arm. Diagnosis: the covering
+rule was in the tutorial and the pack Readme all along ("only the head is
+required; the full body will result in clipping") and the pt3 runtime dropped
+it. Ruling: the base body parts are single-word meshes — head, body, arms,
+legs, feet — split at the outfit seams in Blender (once per body), and
+occupying a garment slot hides that region's skin; head stays visible under
+open-faced hoods until a closed helmet claims it. The slot words and the body
+regions are the same words now — the mesh name IS the slot. body_cull's
+triangle math is replaced by visibility on authored meshes: the
+manual-process solution, as intended. Also: the O menu swings a dressing lens
+— in front of the body, player framed screen-right, position-tracking,
+yaw-ignoring, distance/height/offset as live dials.
+

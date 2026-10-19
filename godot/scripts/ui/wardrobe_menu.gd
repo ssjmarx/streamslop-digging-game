@@ -4,13 +4,15 @@
 extends CanvasLayer
 
 var _wardrobe: RefCounted = null
+var _player: Node = null
 var _open := false
 var _rows: VBoxContainer = null
 
 
 ## Bound by the player right after the avatar loads -- O does nothing before.
-func bind(wardrobe: RefCounted) -> void:
+func bind(wardrobe: RefCounted, player: Node) -> void:
 	_wardrobe = wardrobe
+	_player = player
 	layer = 10
 	_build()
 	visible = false
@@ -28,6 +30,8 @@ func _toggle() -> void:
 	visible = _open
 	GameState.wardrobe_open = _open
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if _open else Input.MOUSE_MODE_CAPTURED
+	if _player != null:
+		_player.set_dressing_cam(_open)
 	if _open:
 		_refresh()
 

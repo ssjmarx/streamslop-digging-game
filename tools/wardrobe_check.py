@@ -18,7 +18,7 @@ import struct
 import sys
 
 # Node names the runtime looks up directly. A missing one is fatal.
-REQUIRED_NODES = ("Armature", "Body_Under", "Head")
+REQUIRED_NODES = ("Armature", "Head", "Body", "Arms", "Legs", "Feet")
 
 # Universal-rig bones the animation and wardrobe systems rely on (Quaternius
 # universal rig; the names body_cull.gd's region map and the UAL libraries
@@ -34,10 +34,11 @@ REQUIRED_BONES = (
 # Forbidden in any node name: spaces and dots (catches "My Mesh", "Armature.001").
 _FORBIDDEN_CHARS = (" ", ".")
 
-# The naming grammar (dev_log Addendum 29): fixed piece names, the hair slot
-# prefix, and the slot words a two-token garment piece must end in. Names of
-# three or more tokens are accessories and always conform.
-_FIXED_PIECE_NAMES = ("Body_Under", "Head", "Eyes", "Eyebrows")
+# The naming grammar (dev_log Addendum 30): single-token names are body
+# regions or face furniture; two-token names are garment slots; three-plus
+# are free accessories.
+_REGION_WORDS = ("Head", "Body", "Arms", "Legs", "Feet")
+_FIXED_PIECE_NAMES = ("Eyes", "Eyebrows")
 _HAIR_PREFIX = "Hair_"
 _SLOT_WORDS = ("Body", "Arms", "Legs", "Feet")
 
@@ -126,21 +127,23 @@ def _node_scale_bad(node):
 def _name_grammar_violation(name):
     """Return a violation message for a piece name, or None when it conforms.
 
-    Fixed names and Hair_<name> always pass; a two-token name must end in a
-    slot word (the exclusive-slot law); three-or-more-token names are
-    accessories and always pass (the free-stacking law).
+    Body regions and face furniture are single-token and fixed; Hair_<name>
+    is the hair slot; a two-token name must end in a slot word; three-or-more
+    tokens are accessories and always pass.
     """
-    if name in _FIXED_PIECE_NAMES or name.startswith(_HAIR_PREFIX):
+    if name in _REGION_WORDS or name in _FIXED_PIECE_NAMES:
+        return None
+    if name.startswith(_HAIR_PREFIX):
         return None
     parts = name.split("_")
     if len(parts) == 2:
         if parts[1] in _SLOT_WORDS:
             return None
         return ("two-token piece %r must end in a slot word (Body/Arms/"
-                "Legs/Feet) -- or be a fixed name" % name)
+                "Legs/Feet)" % name)
     if len(parts) >= 3:
         return None
-    return "single-token name %r is not a fixed name" % name
+    return "single-token name %r is not a body region or face furniture" % name
 
 
 def check_glb(path):
