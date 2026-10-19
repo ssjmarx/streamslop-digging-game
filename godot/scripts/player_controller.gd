@@ -89,6 +89,10 @@ extends CharacterBody3D
 	set(value):
 		shovel_rot_deg = value
 		_apply_shovel_pose()
+@export_group("Lens")
+## Seconds the view glides into/out of a held lens (wardrobe; shop/pour inherit the machinery).
+@export var lens_lerp_seconds := 0.35
+
 @export_group("Dig Swing")
 ## Any UAL clip -- probed inventory (refresh this list if the animation pack swaps;
 ## probe_ual_anims.gd is the drift-check; has_animation fails safe).
@@ -158,6 +162,9 @@ var _mantle_chain_until_msec := 0   # while set, the step search height is the c
 var _mantle_cam_drop := 0.0   # lens catch-up debt after a mantle teleport (meters)
 var _skeleton: Skeleton3D   # the avatar's skeleton, cached at load
 var _head_idx := -1   # the Head bone index; -1 until the avatar loads
+var _lens_active: Camera3D = null   # the lens the view holds while a menu owns it (dressing; shop/pour later)
+var _lens_transit: Camera3D = null  # the transient camera mid-glide; freed on landing
+var _lens_seq := 0                  # each transition stamps itself; a stale stamp stops silently
 var _ghost_skeleton: Skeleton3D   # the shadow ghost's skeleton; mirrors ours per frame
 var _avatar_meshes: Array[MeshInstance3D] = []   # the real avatar's meshes; cast_shadow toggles with the tuck
 
@@ -206,8 +213,8 @@ func spawn_avatar() -> void:
 
 ## Mouse + action routing: rig yaw, both-camera pitch, P flip, wheel zoom, Esc.
 func _unhandled_input(event: InputEvent) -> void:
-	if GameState.wardrobe_open:
-		return   # the O-menu owns the inputs; the world holds its breath
+	if GameState.inputs_held():
+		return   # a lens (O-menu, shop) owns the inputs; the world holds its breath
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		rig.rotate_y(-event.relative.x * mouse_sens)   # mouse yaws the camera rig only
 		_pitch_angle = clampf(_pitch_angle - event.relative.y * mouse_sens, -deg_to_rad(pitch_down_limit_deg), pitch_limit)
@@ -226,7 +233,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Frame physics: gravity, crouch state, movement, facing, FP slide, animation.
 func _physics_process(delta: float) -> void:
-	var frozen: bool = GameState.wardrobe_open   # the O-menu holds movement; gravity slides on
+	var frozen: bool = GameState.inputs_held()   # a lens holds movement; gravity slides on
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 	if not frozen and Input.is_action_just_pressed("jump") and is_on_floor():
@@ -316,10 +323,10 @@ func _update_facing(dir: Vector3, delta: float) -> void:
 
 
 
-## P flips first/third: cameras swap, body visible in both.
+## P flips first/third: the view glides between mode cameras, body visible in both.
 func _toggle_camera() -> void:
 	third_person = not third_person
-	_apply_camera_mode()
+	_run_lens_lerp(tp_camera if third_person else fp_camera, true)
 
 
 ## Wheel: TP cranes the boom 1.5-8m; FP zooms FOV 50-90 (the brow/hair inspector).
@@ -339,10 +346,63 @@ func _apply_camera_mode() -> void:
 	_update_head_tuck()
 
 
-## The dressing lens: a scene node under Mesh, in front of the body in body-space; O makes it current.
+## The dressing lens: a scene node under Mesh, in front of the body in body-space; O lerps to it.
 func set_dressing_cam(on: bool) -> void:
-	_dressing_cam.current = on
-	if not on:
+	if on:
+		enter_lens(_dressing_cam)
+	else:
+		exit_lens()
+
+
+## enter_lens: the active view glides to a pre-placed lens camera (wardrobe; shop/pour inherit this).
+func enter_lens(lens: Camera3D) -> void:
+	_lens_active = lens
+	_run_lens_lerp(lens, false)
+
+
+## exit_lens: glide back to the player's mode camera (FP or TP per the flag), then land the mode.
+func exit_lens() -> void:
+	_lens_active = null
+	_run_lens_lerp(tp_camera if third_person else fp_camera, true)
+
+
+## The shared transition: a transient camera glides from the current view to dest; a newer transition silently supersedes the running one.
+func _run_lens_lerp(dest: Camera3D, land_mode: bool) -> void:
+	_lens_seq += 1
+	var seq := _lens_seq
+	var from := get_viewport().get_camera_3d()
+	if from == null or from == dest:
+		_land_lens(dest, land_mode)
+		return
+	if _lens_transit == null:
+		_lens_transit = Camera3D.new()
+		add_child(_lens_transit)
+	var src := from.global_transform
+	_lens_transit.fov = from.fov
+	_lens_transit.near = from.near
+	_lens_transit.global_transform = src
+	_lens_transit.make_current()
+	var t := 0.0
+	while t < 1.0:
+		t = minf(t + get_process_delta_time() / maxf(lens_lerp_seconds, 0.01), 1.0)
+		if seq != _lens_seq:
+			return   # superseded: the newer transition owns the lens
+		var w := smoothstep(0.0, 1.0, t)
+		_lens_transit.global_transform = src.interpolate_with(dest.global_transform, w)
+		_lens_transit.fov = lerpf(from.fov, dest.fov, w)   # fov rides the glide: the dressing lens frames tighter
+		await get_tree().process_frame
+	if seq != _lens_seq:
+		return
+	_land_lens(dest, land_mode)
+
+
+## Land: hand current to the destination, free the transit; landing a mode camera re-applies FP/TP.
+func _land_lens(dest: Camera3D, land_mode: bool) -> void:
+	if _lens_transit != null:
+		_lens_transit.queue_free()
+		_lens_transit = null
+	dest.make_current()
+	if land_mode:
 		_apply_camera_mode()
 
 

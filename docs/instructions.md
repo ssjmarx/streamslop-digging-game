@@ -143,3 +143,10 @@ gate, and a failed checkbox blocks the tag. Do not build test infrastructure. Do
   center-sampling 4/7). The strike passes center + 0.5 so holes center on the
   aim and match the center-sampled glow preview exactly; the diglog replay must
   apply the same shift (diglog_writer.gd).
+- **Asset size benchmarks.** Every asset promoted into `godot/assets/` is
+  checked against the size table in `docs/asset_plan.md` before it ships:
+  small item ≤ 500 verts, large item ≤ 1,500, small prop ≤ 3,000, large prop
+  ≤ 6,000, actor ≤ 15,000 — the player wardrobe bundle is the sanctioned
+  exemption (split-and-load-worn is the future optimization if it ever bites).
+  Record the count in the catalog claim (ruling 2026-10-19, after the stopwatch
+  arrived heavier than a whole character).

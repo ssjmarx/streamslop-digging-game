@@ -100,3 +100,17 @@ Kubold EULA	Commercial OK, engine-agnostic (per their own FAQ), no source redist
 🚫 Don't buy (recurring traps)
 
 DAZ 3D (per-product Interactive License) · Reallusion (Enterprise tier needed for customization) · generic Unity/Unreal/Fab store characters (engine-locked EULAs — Kubold is the documented exception) · Booth VRM outfits (per-item licenses, often non-commercial)
+
+## Asset size benchmarks (2026-10-19)
+
+Checked at every promotion into `godot/assets/`; the count is recorded in the
+catalog claim. Quaternius packs are the reference point.
+
+| Category   | Vert budget | Measured reference points |
+|------------|-------------|---------------------------|
+| Small item | ≤ 500       | Shovel (161), Sign_Stop (158); stopwatch staged at 21,299 — decimate to ≤ 500 before final |
+| Large item | ≤ 1,500     | — |
+| Small prop | ≤ 3,000     | Stall_Empty, the kiosk (926) |
+| Large prop | ≤ 6,000     | — |
+| Actor      | ≤ 15,000    | Quaternius UBC single body (~13k) |
+| Player     | exemption   | wardrobe_female.glb (53,025 — all 20 pieces; split-and-load-worn is the future optimization if it ever bites) |

@@ -24,7 +24,7 @@ var best_depth := 0.0
 var surrender_declined := 0   # hidden. GDD §9. surfaced nowhere.
 
 var wardrobe := {}            # the player's kit; schema lives in player/wardrobe.gd
-var wardrobe_open := false    # the O-menu holds the mouse; dig.gd stands down
+var view_lens := ""           # the lens holding the world's inputs ("" = free); dig.gd stands down
 
 var _sign := {}               # the stop sign's pose, under the "sign" key
 var _dirty := false
@@ -35,6 +35,11 @@ var _flush_at_msec := 0
 func _ready() -> void:
 	_load()
 	DirtBus.dirt_dug.connect(_on_dirt_dug)
+
+
+## True while a lens (wardrobe, shop, pour) owns the world's inputs.
+func inputs_held() -> bool:
+	return view_lens != ""
 
 
 ## Width of the current dig sphere (GDD §3): tiers change width, never swing rate.

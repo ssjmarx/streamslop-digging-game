@@ -48,12 +48,15 @@ LMB → erase voxel sphere → +dirt → walk to kiosk → sell → buy a wider 
   may step a fast-moving player a single voxel (auto mantle) — never a wall.
   Flight is bounded by dirt —
   you can climb the hole's walls, never ascend its open air column.
-- Movement shovels (Q3, future build): a special class of tier shovel that dig
-  fixed preprogrammed shapes instead of spheres — the staircase shovel is the
-  founding member; more shapes may follow. Same verb, same 0.45s cadence; each
-  shape is a batch of idempotent strikes through DigAuthority (§13), so netcode
-  gets them for free. Not part of the launch tier ladder — tiers change radius
-  only; the class is future content.
+- Movement shovels: a special class of shovel that dig fixed preprogrammed
+  shapes instead of spheres — the staircase shovel is the founding member,
+  authored in Blender with the rest of the shovel set (ruling 2026-10-19: the
+  class is in scope; the Q3 marker is retired). Each swing digs a 2-voxel-wide,
+  1-voxel-per-step staircase in the player's facing direction, gauged from
+  where the feet are planted; up/down look is disregarded. Same verb, same
+  0.45s cadence; each shape is a batch of idempotent strikes through
+  DigAuthority (§13), so netcode gets them for free. Still not part of the
+  launch tier ladder — tiers change radius only.
 
 | Tier | Name               | Radius | Swing | Cost   | Notes                     |
 |------|--------------------|--------|-------|--------|---------------------------|
@@ -165,16 +168,28 @@ ground but also it's a giant co-op quake 3 level."
 - The shopkeeper is a garbage collector. Selling frees dirt: he puts it back where he
   found it. Selling **deletes** `diglog.jsonl` and reverts the terrain to the pristine
   generator — the hole un-happens. Personal best survives in `state.json` (§10).
-- The pour is theater with a law inside: refill runs deepest-first and the pour rate
-  outruns every shovel, forever. The pour rate is a safety invariant wearing an
-  animation — never tune it, never polish it slower. The shopkeeper lifts any player
-  standing in the fill column to the surface (he is also the only elevator).
+- The pour is theater with a law inside: the layers fill bottom-up (deepest
+  first) while voxel rows below the rising fill line are culled back to the
+  pristine generator, and the pour rate outruns every shovel, forever — a safety
+  invariant wearing an animation; never tune it, never polish it slower. The
+  shopkeeper plays his spell-casting animation, hands glowing, while the hole
+  fills; the view rides an overhead camera (the boot spectator's, lerped); a
+  click skips the theater to the complete end state. The shopkeeper lifts any
+  player standing in the fill column to the surface (he is also the only
+  elevator).
 - He never checks whether the hole is occupied (§6f). He walks to the rim visibly
-  trembling and fills with the Long Shovel — the Regular Shovel stretched 6× on Y, the
-  game's second original asset, a lie, hung on the kiosk wall, never for sale.
+  trembling and fills; his tool is never modeled, never shown up close, never
+  for sale (the Long Shovel was dropped at the 0.0.4 gate, ruling 2026-10-19 —
+  never made, never shipped).
 - Shop inventory at launch: five items, one scam (Snow Shovel — purchasable,
   equippable, useless), one meta item (§6e). The Ergonomic Shovel has byte-identical
   stats to the Regular, forever.
+- The shop is diegetic — no UI panel. From the world, the kiosk is one
+  interactable: hover glows the whole shop, a click walks the camera to a
+  pre-placed shop shot. Inside, individual items glow under the same sight
+  machinery: the shovels, the stopwatch, and the shopkeeper himself as the SELL
+  DIRT button, a billboard over his head proclaiming it. Esc exits. Future
+  items join the shop as props, never as menus.
 - He never descends. He does not check the hole. He is afraid of it too, but greed
   overcomes fear.
 
@@ -300,9 +315,11 @@ One clang (dig), one whiff (miss), one footstep set, one wind loop.
 
 ## §11 UI
 
-- HUD: DIRT (or CONTRIBUTED for guests), $, ASSETS N/M (top-right), lower third.
-- The depth meter is the largest element — bottom-center, monospace, one decimal,
-  negative. It is the score. There is no other score.
+- HUD, top-right readout stack (amended 2026-10-19: the bottom-center depth
+  meter is retired): DIRT (or CONTRIBUTED for guests), $, DEPTH, FPS — ASSETS
+  N/M joins the stack at CREDITS (0.0.6).
+- The depth readout is monospace, one decimal, negative. It is the score. There
+  is no other score.
 - Personal best depth flashes on record. Local only until 0.0.10.
 - Tutorial: two popups, total, forever: "You are seeing assets. This is normal." and
   "LMB — DIG." Future updates may add tutorials; none will conclude.

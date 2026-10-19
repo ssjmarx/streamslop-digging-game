@@ -141,8 +141,8 @@ worn as overlays, hidden by an authored slot table; the debug wardrobe menu
 (body swap, per-slot cycling, RANDOMIZE), persistence, ghost parity. The
 automation boundary is scope law: geometry is human in Blender, tools only check
 (`tools/wardrobe_check.py`), runtime is state only (dev_log Entry #4).
-Select-screen presentation (pedestal, LOCK IN, the mirror at the sign) closes
-the milestone at a later pt.
+Closed at the 2026-10-19 gate; the pedestal select and the sign mirror are
+deferred to an unassigned later pt (ruling: "lets make the 0.0.4 tag").
 **Exit tests:** ☐ the debug menu swaps male/female live ☐ every slot cycles
 independently; mixed kits bend together in FPV and TPV ☐ the choice persists
 across restart ☐ the ghost stays dressed identically ☐ dig-jump and swing are
@@ -152,10 +152,17 @@ for missing models, credited.
 
 ### v0.0.5 — THE KIOSK
 **Question:** Is there a loop?
-**Scope:** the shopkeeper NPC (the launch NPC), sell-all, the pour animation
-(deepest-first, the waiter lift), diglog wipe + pristine revert, Long Shovel on the
-wall, snow shovel, ergonomic plateau, the stopwatch with its silent reset. Volume and
-depth tracked locally — submission is 0.0.10's problem.
+**Scope:** the shopkeeper NPC (the launch NPC — a static frankenmodel:
+superhero-male head on the male peasant body), the kiosk prop (Quaternius
+Fantasy Props MegaKit `Stall_Empty`), the diegetic shop (whole-shop hover
+outside, per-item glow inside; the shopkeeper is the SELL DIRT button), sell-all,
+the pour (bottom-up layers, rows culled to the pristine generator behind the
+rising fill line, the spell-casting shopkeeper, click-to-skip, the waiter lift,
+the overhead lerp camera), diglog wipe + pristine revert, the Blender-authored
+shovel set (toy/trowel/pro/ergonomic — the Long Shovel is dropped, ruling
+2026-10-19), snow shovel, ergonomic plateau, the stopwatch with its silent
+reset. Volume and depth tracked locally — submission is 0.0.10's problem. The
+staircase shovel and its dig solver land in a later pt (ruling 2026-10-19).
 **Exit tests:** ☐ sell → `diglog.jsonl` gone from `user://` ☐ terrain spot-checks
 byte-match a fresh generator ☐ PB depth survives in `state.json` — verify the
 sanctuary is real ☐ pour lifts a standing player from −20m to the rim (the waiter) ☐

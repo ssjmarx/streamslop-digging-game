@@ -24,11 +24,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		_toggle()
 
 
-## Open/close: free or recapture the mouse; flag GameState for dig.gd.
+## Open/close: free or recapture the mouse; the lens flag holds the world's inputs.
 func _toggle() -> void:
 	_open = not _open
 	visible = _open
-	GameState.wardrobe_open = _open
+	GameState.view_lens = "wardrobe" if _open else ""
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if _open else Input.MOUSE_MODE_CAPTURED
 	if _player != null:
 		_player.set_dressing_cam(_open)
