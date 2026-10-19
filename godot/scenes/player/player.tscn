@@ -33,8 +33,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 visible = false
 mesh = SubResource("capsule_mesh")
 
-[node name="DressingCam" type="Camera3D" parent="Mesh"]
-transform = Transform3D(-0.9928, 0, -0.1197, 0, 1, 0, 0.1197, 0, -0.9928, 0, 1.35, -2)
+[node name="DressingCam" type="Camera3D" parent="Mesh" unique_id=295540020]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0.27657753, 1.006147, -1.2450182)
 
 [node name="Rig" type="Node3D" parent="." unique_id=51228431]
 
@@ -58,7 +58,6 @@ view_distance = 256
 
 [node name="Dig" type="Node3D" parent="." unique_id=372828847]
 script = ExtResource("2_dig")
-startup_frames = 61
 
 [node name="Aim" type="Node3D" parent="Dig" unique_id=430632775]
 script = ExtResource("6_aim")

@@ -9,7 +9,7 @@
 [ext_resource type="Script" uid="uid://bxhnjdm4bm3eb" path="res://scripts/hole/diglog_writer.gd" id="7_diglog"]
 [ext_resource type="AudioStream" uid="uid://kns7u8cdoudc" path="res://assets/music/pixabay/melodigne-exploration-310024.mp3" id="8_music"]
 [ext_resource type="ArrayMesh" uid="uid://csbk3qoftxxsq" path="res://assets/meshes/quaternius/street/Sign_Stop.obj" id="9_signmesh"]
-[ext_resource type="Script" path="res://scripts/world/ambience.gd" id="10_amb"]
+[ext_resource type="Script" uid="uid://cpbwrpu58j3b5" path="res://scripts/world/ambience.gd" id="10_amb"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.36, 0.55, 0.8, 1)
@@ -89,5 +89,5 @@ script = ExtResource("6_bgm")
 [node name="Diglog" type="Node" parent="." unique_id=949684743 groups=["diglog"]]
 script = ExtResource("7_diglog")
 
-[node name="Ambience" type="Node3D" parent="."]
+[node name="Ambience" type="Node3D" parent="." unique_id=204180849]
 script = ExtResource("10_amb")
