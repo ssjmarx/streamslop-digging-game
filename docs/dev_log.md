@@ -829,3 +829,17 @@ impossible. And the seam-fix tier 1: garment pieces render double-sided
 (cull_disabled on their duplicated materials) — openings show cloth interior
 instead of the world; tier 2 caps await corey's list.
 
+**Addendum 32 — caps go on the garment, sized by fit.** Tier 2 landed with a
+correction from the first pass: the caps initially went on the bare body's
+region seams, where every garment rim is wider than the skin — the caps
+poked out exactly wrong. Ruling: caps are garment interiors, placed on a
+seam only when that seam is LOOSER than the bare body beneath it — for
+Peasant/Ranger that meant torso and legs; sleeves ride at the shoulder split
+exactly and take none; Quaternius' boots ship pre-capped (why the feet seam
+never showed in any combination). Recorded as the manual element of every
+future import: split the regions the pieces replace, cap seams looser than
+the body, and for pieces shorter than the region they replace, clone and
+extend the base body into them — a few Quaternius pieces ship with the base
+body included and are clean swaps out of the box. The contract lives in
+blender/README.md (local; blender/ is untracked by ruling).
+
