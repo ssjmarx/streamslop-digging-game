@@ -1,6 +1,7 @@
 # Engine cache and retired-tool artifacts -- matches at any depth
 .godot/
 .aider*
+__pycache__/
 
 # Blender backup churn (sources live in blender/; the .blend1 is scratch)
 *.blend1
