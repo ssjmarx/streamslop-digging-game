@@ -92,6 +92,27 @@
      "characters/outfits/T_Regular_Female_Dark_BaseColor.png",
      "characters/outfits/T_Regular_Female_Normal.png",
      "characters/outfits/T_Regular_Female_Roughness.png"
+   ]},
+  {"id": "char_wardrobe_female", "name": "Wardrobe Female body + outfits (authored from Quaternius CC0)", "author": "corey (Quaternius CC0 sources)", "license": "CC0",
+   "paths": [
+     "characters/wardrobe/wardrobe_female.glb",
+     "characters/wardrobe/wardrobe_female_T_Eye_Brown.png",
+     "characters/wardrobe/wardrobe_female_T_Hair_1_BaseColor.png",
+     "characters/wardrobe/wardrobe_female_T_Hair_1_Normal.png",
+     "characters/wardrobe/wardrobe_female_T_Hair_2_BaseColor.png",
+     "characters/wardrobe/wardrobe_female_T_Hair_2_Normal.png",
+     "characters/wardrobe/wardrobe_female_T_Peasant_BaseColor.png",
+     "characters/wardrobe/wardrobe_female_T_Peasant_Normal.png",
+     "characters/wardrobe/wardrobe_female_T_Peasant_ORM.png",
+     "characters/wardrobe/wardrobe_female_T_Ranger_BaseColor.png",
+     "characters/wardrobe/wardrobe_female_T_Ranger_Normal.png",
+     "characters/wardrobe/wardrobe_female_T_Ranger_ORM.png",
+     "characters/wardrobe/wardrobe_female_T_Regular_Female_Dark_BaseColor.png",
+     "characters/wardrobe/wardrobe_female_T_Regular_Female_Normal.png",
+     "characters/wardrobe/wardrobe_female_T_Regular_Female_Roughness.png",
+     "characters/wardrobe/wardrobe_female_T_Superhero_Female_Dark_BaseColor.png",
+     "characters/wardrobe/wardrobe_female_T_Superhero_Female_Normal.png",
+     "characters/wardrobe/wardrobe_female_T_Superhero_Female_Roughness.png"
    ]}
 ]
 
