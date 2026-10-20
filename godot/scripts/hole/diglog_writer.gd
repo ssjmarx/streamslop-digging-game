@@ -1,6 +1,6 @@
 ## The diglog -- the save file is the hole's entire history (GDD App B): float
 ## centers + radii, re-derived through the sight's rule on boot. 0.0.3 MEMORY:
-## the hole survives a restart, voxel-identically (probe_replay.gd is the proof).
+## the hole survives a restart, voxel-identically. Selling wipes it (0.0.5).
 extends Node
 
 const DIGLOG_PATH := "user://hole/diglog.jsonl"
@@ -66,3 +66,14 @@ func read_entries() -> Array[Dictionary]:
 				"r": parsed["r"],
 			})
 	return entries
+
+
+## The truth, after the theater (§6c): close the handle and delete the file -- the hole un-happens.
+func wipe() -> void:
+	if _file != null:
+		_file.close()
+		_file = null
+	var dir := DirAccess.open("user://hole")
+	if dir != null and dir.file_exists("diglog.jsonl"):
+		dir.remove("diglog.jsonl")
+		print("diglog: wiped -- the hole is pristine again")

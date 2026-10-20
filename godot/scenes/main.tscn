@@ -10,6 +10,9 @@
 [ext_resource type="AudioStream" uid="uid://kns7u8cdoudc" path="res://assets/music/pixabay/melodigne-exploration-310024.mp3" id="8_music"]
 [ext_resource type="ArrayMesh" uid="uid://csbk3qoftxxsq" path="res://assets/meshes/quaternius/street/Sign_Stop.obj" id="9_signmesh"]
 [ext_resource type="Script" uid="uid://cpbwrpu58j3b5" path="res://scripts/world/ambience.gd" id="10_amb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/apron_mesh.tres" id="11_apronmesh"]
+[ext_resource type="ConcavePolygonShape3D" path="res://scenes/world/apron_shape.tres" id="13_apronshape"]
+[ext_resource type="PackedScene" uid="uid://pysmxnxilbgf" path="res://scenes/world/kiosk.tscn" id="12_kiosk"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.36, 0.55, 0.8, 1)
@@ -74,7 +77,7 @@ crouch_anim_ref_scale = 1.0
 
 [node name="HUD" parent="." unique_id=329069978 instance=ExtResource("3_hud")]
 
-[node name="StopSign" type="RigidBody3D" parent="." unique_id=120792277]
+[node name="StopSign" type="RigidBody3D" parent="." unique_id=120792277 groups=["stop_sign"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 0)
 mass = 5.0
 script = ExtResource("5_sign")
@@ -91,3 +94,15 @@ script = ExtResource("7_diglog")
 
 [node name="Ambience" type="Node3D" parent="." unique_id=204180849]
 script = ExtResource("10_amb")
+
+[node name="Apron" type="MeshInstance3D" parent="." unique_id=330831707]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+mesh = ExtResource("11_apronmesh")
+
+[node name="Body" type="StaticBody3D" parent="Apron"]
+
+[node name="Shape" type="CollisionShape3D" parent="Apron/Body"]
+shape = ExtResource("13_apronshape")
+
+[node name="Kiosk" parent="." unique_id=965258059 instance=ExtResource("12_kiosk")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 54)

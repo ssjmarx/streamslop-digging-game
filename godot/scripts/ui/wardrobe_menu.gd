@@ -18,9 +18,11 @@ func bind(wardrobe: RefCounted, player: Node) -> void:
 	visible = false
 
 
-## O toggles the menu once the avatar has loaded.
+## O toggles the menu once the avatar has loaded; never over a foreign lens.
 func _unhandled_input(event: InputEvent) -> void:
 	if _wardrobe != null and event.is_action_pressed("wardrobe_menu"):
+		if GameState.view_lens != "" and GameState.view_lens != "wardrobe":
+			return   # the shop or the pour owns the lens; O stands down
 		_toggle()
 
 

@@ -21,6 +21,7 @@ var dirt := 0
 var money := 0
 var shovel_tier := 0
 var best_depth := 0.0
+var stopwatch_owned := false   # the meta item, $600 once (GDD §6e); runs forever after
 var surrender_declined := 0   # hidden. GDD §9. surfaced nowhere.
 
 var wardrobe := {}            # the player's kit; schema lives in player/wardrobe.gd
@@ -35,6 +36,7 @@ var _flush_at_msec := 0
 func _ready() -> void:
 	_load()
 	DirtBus.dirt_dug.connect(_on_dirt_dug)
+	DirtBus.dirt_sold.connect(_on_dirt_sold)
 
 
 ## True while a lens (wardrobe, shop, pour) owns the world's inputs.
@@ -47,16 +49,17 @@ func dig_radius() -> float:
 	return SHOVELS[shovel_tier]["radius"]
 
 
-## Debug only (ruling 2026-10-17): step the tier by dir (-1/+1), clamped; the kiosk (0.0.4) replaces it.
-func cycle_shovel_tier(dir: int) -> void:
-	shovel_tier = clampi(shovel_tier + dir, 0, SHOVELS.size() - 1)
-	touch()
-
-
 ## Dirt and depth arrive over the bus; the file learns them debounced.
 func _on_dirt_dug(amount: int, _voxel_pos: Vector3i, depth: float, _by_peer: int) -> void:
 	dirt += amount
 	best_depth = minf(best_depth, depth)
+	touch()
+
+
+## The sale collapses carried dirt into money at the kiosk (1 dirt = $1, GDD §3).
+func _on_dirt_sold(_amount: int, price: int, _by_peer: int) -> void:
+	money += price
+	dirt = 0
 	touch()
 
 
@@ -99,7 +102,7 @@ func save_now() -> void:
 		return
 	f.store_string(JSON.stringify({
 		"state": {"dirt": dirt, "money": money, "shovel_tier": shovel_tier,
-			"best_depth": best_depth},
+			"best_depth": best_depth, "stopwatch_owned": stopwatch_owned},
 		"wardrobe": wardrobe,
 		"sign": _sign,
 	}))
@@ -121,6 +124,7 @@ func _load() -> void:
 	money = int(state.get("money", 0))
 	shovel_tier = clampi(int(state.get("shovel_tier", 0)), 0, SHOVELS.size() - 1)
 	best_depth = float(state.get("best_depth", 0.0))
+	stopwatch_owned = bool(state.get("stopwatch_owned", false))
 	wardrobe = _dict_of(data, "wardrobe")
 	if data.has("sign") and data["sign"] is Dictionary:
 		_sign = data["sign"]

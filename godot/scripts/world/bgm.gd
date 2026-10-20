@@ -1,6 +1,6 @@
 ## Overworld music, Minecraft-style: not always on. A random Pixabay track plays
-## ~90s, fades, then 1-3 minutes of silence -- and the runtime low-pass bus
-## muffles by the dirt overhead (dug out the sky, and the music returns).
+## in full, fades its last 10s, then 1-3 minutes of silence -- and the runtime
+## low-pass bus muffles by the dirt overhead (dug out the sky, music returns).
 extends AudioStreamPlayer
 
 # -- Config (tunables are exports -- GDD §13) ------
@@ -15,8 +15,6 @@ extends AudioStreamPlayer
 	"res://assets/music/noncombat/calm_currents.mp3",
 	"res://assets/music/noncombat/sunset_plains.ogg",
 ]
-## Seconds of track before the fade begins (Minecraft-style: not the whole song).
-@export var play_seconds := 90.0
 ## Fade length; completes at the track's natural end if that comes first.
 @export var fade_seconds := 10.0
 ## Silence bounds between tracks (seconds, randomized).
@@ -103,7 +101,7 @@ func _start_track() -> void:
 	if track_stream is AudioStreamMP3:
 		(track_stream as AudioStreamMP3).loop = false   # the scheduler owns the clock
 	self.stream = track_stream
-	_fade_start = minf(play_seconds, maxf(track_stream.get_length() - fade_seconds, 0.0))
+	_fade_start = maxf(track_stream.get_length() - fade_seconds, 0.0)   # the whole track, then the tail
 	_state = State.PLAYING
 	_timer = 0.0
 	volume_db = SILENT_DB

@@ -113,6 +113,31 @@
      "characters/wardrobe/wardrobe_female_T_Superhero_Female_Dark_BaseColor.png",
      "characters/wardrobe/wardrobe_female_T_Superhero_Female_Normal.png",
      "characters/wardrobe/wardrobe_female_T_Superhero_Female_Roughness.png"
-   ]}
+   ]},
+  {"id": "sfx_ui_kiosk",  "name": "UI Audio: click1, rollover1, switch2", "author": "Kenney", "license": "CC0",
+   "paths": ["sfx/kenney/ui/click1.ogg", "sfx/kenney/ui/rollover1.ogg", "sfx/kenney/ui/switch2.ogg"]},
+  {"id": "vox_shopkeeper", "name": "Voiceover Pack (Male): ready, mission_completed", "author": "Kenney", "license": "CC0",
+   "paths": ["sfx/kenney/voice/ready.ogg", "sfx/kenney/voice/mission_completed.ogg"]},
+  {"id": "mesh_kiosk_01", "name": "Stall Empty (Fantasy Props MegaKit, 1,650 verts)", "author": "Quaternius", "license": "QAL 1.0",
+   "verts": 1650,
+   "paths": [
+     "meshes/quaternius/megakit/Stall_Empty.gltf",
+     "meshes/quaternius/megakit/Stall_Empty.bin",
+     "meshes/quaternius/megakit/T_Trim_Metal_BaseColor.png",
+     "meshes/quaternius/megakit/T_Trim_Metal_Normal.png",
+     "meshes/quaternius/megakit/T_Trim_Metal_ORM.png",
+     "meshes/quaternius/megakit/T_Trim_Furniture_BaseColor.png",
+     "meshes/quaternius/megakit/T_Trim_Furniture_Normal.png",
+     "meshes/quaternius/megakit/T_Trim_Furniture_ORM.png",
+     "meshes/quaternius/megakit/T_Trim_Cloth_BaseColor.png",
+     "meshes/quaternius/megakit/T_Trim_Cloth_Normal.png",
+     "meshes/quaternius/megakit/T_Trim_Cloth_ORM.png",
+     "meshes/quaternius/megakit/T_Trim_Props_BaseColor.png",
+     "meshes/quaternius/megakit/T_Trim_Props_Normal.png",
+     "meshes/quaternius/megakit/T_Trim_Props_ORM.png"
+   ]},
+  {"id": "mesh_stopwatch_01", "name": "Stopwatch (21,299 verts; small-item budget 500 -- decimate pending)", "author": "febrianes86 (Pixabay)", "license": "Pixabay Content License",
+   "verts": 21299,
+   "paths": ["meshes/pixabay/stopwatch.glb"]}
 ]
 

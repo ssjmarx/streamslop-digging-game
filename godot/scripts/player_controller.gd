@@ -46,6 +46,11 @@ extends CharacterBody3D
 @export var mouse_sens := 0.003
 ## Lerp weight for the body facing (per second).
 @export var body_turn_speed := 12.0
+@export_group("Spawn")
+## Which way you wake up looking (degrees). Lives on the RIG: movement and the
+## cameras both key off its local basis, so spawn facing is a rig concern --
+## rotating the body node instead inverts the controls (2026-10-19 lesson).
+@export var spawn_yaw_deg := 180.0
 @export_group("Camera Feel")
 ## Meters per wheel notch (third person).
 @export var zoom_boom_step := 0.5
@@ -149,7 +154,7 @@ const LOOPERS := [
 
 var third_person := false
 var crouching := false
-var jumped := false   # armed by a real jump (space, or a granted dig-jump); falls never arm it
+var jumped := false   # armed by a real jump (space, or a granted shovel-jump); falls never arm it
 var _pitch_angle := 0.0
 var _swing_until_msec := 0   # while set, the swing clip owns the body; locomotion waits
 var _shovel: MeshInstance3D   # the attached held shovel; the pose exports apply to it live
@@ -182,6 +187,7 @@ var _avatar_meshes: Array[MeshInstance3D] = []   # the real avatar's meshes; cas
 ## Boot: mouse capture and dials only; the loader spawns the avatar (spawn_avatar).
 func _ready() -> void:
 	add_to_group("player")   # the HUD reads us by group; nothing set this before 0.0.2 (depth was pinned at 0.0)
+	rig.rotation.y = deg_to_rad(spawn_yaw_deg)   # the look pivot faces the shop; NEVER rotate the body for this
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	boom.add_excluded_object(get_rid())
 	_apply_fp_near_plane()
@@ -251,7 +257,7 @@ func _physics_process(delta: float) -> void:
 	var intended := Vector3(velocity.x, 0.0, velocity.z)   # pre-slide intent: the slide mangles velocity
 	move_and_slide()
 	if is_on_floor():
-		jumped = false   # landing disarms; only real jumps (space, dig-jump) arm it
+		jumped = false   # landing disarms; only real jumps (space, shovel-jump) arm it
 	_try_mantle(delta, intended)
 	_apply_mantle_cam(delta)
 	_update_facing(dir, delta)
@@ -655,8 +661,8 @@ func play_swing() -> void:
 	anim_player.seek(0.0)
 
 
-## dig.gd calls this on a granted dig-jump: a dig-jump is a jump (the chain law).
-func notify_dig_jump() -> void:
+## dig.gd calls this on a granted shovel jump: a shovel jump is a jump (the chain law).
+func notify_shovel_jump() -> void:
 	jumped = true
 
 

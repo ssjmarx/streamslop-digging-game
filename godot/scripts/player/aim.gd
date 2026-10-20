@@ -36,6 +36,7 @@ const TYPE_BEDROCK := 3   # the rim wall: undiggable (must match dirt_checker_ge
 var swing_range := 10.0   # dig.gd injects its law const; the sight never owns the number
 var body: Node   # the player controller; dig.gd injects us
 var _last := {}   # last authoritative query; empty on a clean miss
+var _hovered: Object = null   # the clickable under the sight; null on a clean miss
 var _tex_in: Texture2D
 var _tex_out: Texture2D
 var _glow_material: StandardMaterial3D
@@ -61,20 +62,41 @@ func _ready() -> void:
 	_preview_mm = mm
 
 
-## Per physics frame: run the diagnostic ray, park the crosshair, glow the sphere -- all live, no caching.
+## Per physics frame: run the diagnostic ray, park the crosshair, glow the sphere, hover the shop.
 func _physics_process(_delta: float) -> void:
 	_last = swing_query(diagnostic_range)
 	_update_crosshair()
 	_update_preview()
+	_update_hover()
 
 
-## The one aim ray: head origin, camera direction; {} on a miss; dig.gd re-runs it at swing time.
+## The diegetic cursor's hover: the interactable under the sight glows while in range; unglow on leave.
+func _update_hover() -> void:
+	var target: Object = null
+	if not _last.is_empty() and _last.distance <= swing_range and _last.collider.has_method("set_hover"):
+		target = _last.collider
+	if target == _hovered:
+		return
+	if _hovered != null:
+		_hovered.set_hover(false)
+	_hovered = target
+	if _hovered != null:
+		_hovered.set_hover(true)
+
+
+## The one aim ray: head origin + camera direction; in shop view it is the virtual cursor's ray from the shop camera.
 func swing_query(range_m: float) -> Dictionary:
 	var camera := get_viewport().get_camera_3d()
 	if camera == null or body == null:
 		return {}
 	var from: Vector3 = body.aim_origin()
 	var dir: Vector3 = -camera.global_transform.basis.z
+	if GameState.view_lens == "shop":
+		var kiosk := get_tree().get_first_node_in_group("kiosk")
+		if kiosk != null:
+			var pt: Vector2 = kiosk.cursor_point()
+			from = camera.project_ray_origin(pt)
+			dir = camera.project_ray_normal(pt)
 	var query := PhysicsRayQueryParameters3D.create(from, from + dir * range_m)
 	query.exclude = [body.get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
@@ -119,8 +141,11 @@ func targeted_voxels(center: Vector3, radius: float) -> Array[Vector3i]:
 	return cells_in_sphere(vt, center, radius)
 
 
-## Crosshair: #15 in swing range, #16 otherwise; parks at the ray end on a miss.
+## Crosshair: #15 in swing range, #16 otherwise; parks at the ray end on a miss; hidden during the pour.
 func _update_crosshair() -> void:
+	if GameState.view_lens == "pour":
+		_crosshair.visible = false
+		return
 	var in_range: bool = not _last.is_empty() and _last.distance <= swing_range
 	_crosshair.texture = _tex_in if in_range else _tex_out
 	if _last.is_empty():
@@ -132,8 +157,11 @@ func _update_crosshair() -> void:
 	_crosshair.visible = true
 
 
-## Glow: live, per frame, exactly the targeting array -- data truth, not collision truth.
+## Glow: live, per frame, exactly the targeting array; hidden during the pour with the crosshair.
 func _update_preview() -> void:
+	if GameState.view_lens == "pour":
+		_preview.visible = false
+		return
 	var in_range: bool = not _last.is_empty() and _last.distance <= swing_range
 	_preview.visible = in_range
 	if not in_range:

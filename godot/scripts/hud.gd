@@ -1,30 +1,22 @@
-## HUD -- the depth meter is the largest element; it is the score.
-## VERB scope: DEPTH, DIRT, and the debug SHOVEL readout ([ and ] cycle tiers).
-## Labels read live: depth from the player node, dirt from GameState.
+## HUD -- the top-right readout stack (GDD §11): DIRT, $, DEPTH, FPS.
+## Labels read live: depth from the player node, the rest from GameState.
+## The bottom-center depth meter is retired (2026-10-19).
 extends CanvasLayer
 
-@onready var depth_label: Label = $DepthMeter
+@onready var depth_label: Label = $DepthLabel
 @onready var dirt_label: Label = $DirtCounter
-@onready var shovel_label: Label = $ShovelLabel
+@onready var money_label: Label = $MoneyLabel
+@onready var fps_label: Label = $FpsLabel
 
 
-## Debug tier cycler (ruling 2026-10-17): [ and ] step GameState's tier; the kiosk (0.0.4) replaces this.
-func _unhandled_input(event: InputEvent) -> void:
-	if GameState.inputs_held():
-		return   # a lens (O-menu, shop) owns the inputs
-	if event.is_action_pressed("shovel_prev"):
-		GameState.cycle_shovel_tier(-1)
-	elif event.is_action_pressed("shovel_next"):
-		GameState.cycle_shovel_tier(1)
-
-
-## Per frame: DEPTH from the player's y (0.0 at spawn), DIRT from GameState.
+## Per frame: DEPTH from the player's y, the rest from GameState and the engine.
 func _process(_delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node3D
 	if player:
 		depth_label.text = "DEPTH %.1fm" % player.global_position.y
 	dirt_label.text = "DIRT %d" % GameState.dirt
-	shovel_label.text = "SHOVEL %s" % GameState.SHOVELS[GameState.shovel_tier]["short"]
+	money_label.text = "$ %d" % GameState.money
+	fps_label.text = "FPS %d" % Engine.get_frames_per_second()
 
 
 ## Boot sequence label (0.0.3 ruling): "loading your hole."

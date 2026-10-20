@@ -870,3 +870,161 @@ extend the base body into them — a few Quaternius pieces ship with the base
 body included and are clean swaps out of the box. The contract lives in
 blender/README.md (local; blender/ is untracked by ruling).
 
+## Entry #6 — 2026-10-19 — v0.0.4 tagged; 0.0.5 pt1–pt3: the kiosk exists
+
+The wardrobe milestone closed. corey walked the feel checklist, the tag went
+down at 067a58e (`v0.0.4`, annotated v0.0.1/v0.0.2 style), and the export/zip/
+patch-note ritual is pending on corey's machine as usual. Rulings at the gate:
+the pedestal select and the sign mirror are deferred to an unassigned later pt;
+the Long Shovel is dropped (never made, never shipped); movement shovels came
+into scope with the staircase shovel as founding member (Q3 marker retired);
+the HUD moves to a top-right readout stack. Boundary docs amended in the tag
+commit (GDD §3/§6c/§11, ROADMAP §5, instructions §7, asset_plan benchmarks).
+
+- **pt3.6 rode the tag**: the generalized lens — `enter_lens`/`exit_lens` run a
+  transient camera that glides (0.35 s, supersede-safe) between any two views;
+  O uses it, and corey liked it enough to rule P onto it the same day.
+  `wardrobe_open` generalized to `GameState.view_lens` + `inputs_held()`; the
+  dead `interact` (E) action removed from project.godot.
+- **pt1 assets**: ten Quaternius packs staged from ~/Downloads (the two 2025
+  [Standard] MegaKits are QAL v1.0, NOT CC0 — the legacy ten are CC0; recorded
+  in `assets_unimplemented/quaternius/ATTRIBUTION.md`). Promoted with catalog
+  claims: Kenney ui-audio (click1/rollover1/switch2), Kenney voiceover Male
+  (ready, mission_completed — the shopkeeper's voice until better lines exist),
+  `Stall_Empty` (the kiosk prop, 1,650 verts) and the stopwatch (21,299 verts —
+  over the small-item budget, decimate to ≤ 500 pending corey's Blender pass).
+  The size-benchmark table is law now: small item ≤ 500, large item ≤ 1,500,
+  small prop ≤ 3,000, large prop ≤ 6,000, actor ≤ 15,000; the player wardrobe
+  bundle is the sanctioned exemption.
+- **pt2 the kiosk**: `scenes/world/kiosk.tscn` is a hand-editable scene,
+  pre-placed in main.tscn on the apron at (0, 0, 54) — corey hand-adjusts from
+  there. The apron is the world lip (Addendum 26.4): a generated ring mesh
+  50→60 m, trimesh collision, undiggable because it is not terrain. Outside,
+  the whole stall is one clickable and hover glows it; a click lerps to the
+  pre-placed ShopCamera. Inside, the mouse stays captured and drives a virtual
+  screen point; the sight casts through it, so the crosshair IS the cursor and
+  items glow individually (duplicated-material emission, the tint-port idiom).
+  The shopkeeper is a capsule placeholder until corey's frankenmodel lands
+  (superhero-male head, male peasant body); his SELL DIRT billboard already
+  hangs. Purchases went live the same day: tier buys are next-tier-only, the
+  stopwatch is $600 with the whole tooltip, owned tags read OWNED, and the
+  debug `[`/`]` cycler is dead (its actions removed from project.godot). The
+  HUD is the top-right stack: DIRT, $, DEPTH, FPS.
+- **pt3 the reset**: SELL DIRT reads the carried count, plays the pour, then
+  tells the truth. The pour walks 16-aligned data-block slabs bottom-up, each
+  re-emitted straight from the generator — the fill and the cull are the same
+  write, so "pristine revert" is by construction, not parity math; the rate is
+  an export with the never-tune-slower law on it. A click skips to the complete
+  end state. The waiter lift raises any body inside the disc with the fill
+  line (the shopkeeper never checks occupancy). At the settle: `depth_floor`
+  resets to START_DEPTH and the whole stack re-emits (byte-identical to a fresh
+  boot), the diglog is deleted (§6c: the theater is mandatory, the deletion is
+  the truth), `dirt_sold` fires and GameState collapses dirt into money at 1:1,
+  the stopwatch ownership persists in state.json, and the stop sign re-
+  materializes via its new `stop_sign` group (re-frozen if the pour buried it).
+  Relaunch after a sell loads instantly — empty diglog, no replay.
+- **The slab-alignment lesson**: the pour's first draft walked block rows at
+  `-depth_floor + n`, but data blocks are 16-aligned; `depth_floor` itself only
+  aligns after the first grow (START_DEPTH is 20). Misaligned rows would have
+  written slab data into the wrong blocks — caught in self-review, fixed by
+  computing the aligned bottom (`-ceili(depth_floor/16)*16`) and stepping by
+  16. `write_floor_blocks` never hit this because `ensure_depth` rounds every
+  grown floor to 16 first.
+- **One mesh, one glow manager**: the first kiosk draft had the stall as a
+  sibling of its collider and a material_override fighting the hover-glow
+  duplicates on the stopwatch. Fix: meshes live under the clickable that glows
+  them (stall under StallBody, placeholder under SellZone), and the watch keeps
+  its author materials — the hand-made material pass is corey's editor work.
+- **Known artifact**: headless smoke prints 3× `Parameter "material" is null`
+  from the dummy renderer since the kiosk landed; windowed run pending to
+  confirm it is headless-only.
+- **Pending for the milestone**: the shopkeeper GLB, the four Blender shovels,
+  the staircase shovel + its solver (later pt), the stopwatch decimate, the
+  snow shovel, the fear anim, the "You have no hole." empty state, and the
+  local volume/depth tracking surface.
+
+**Addendum 35 — the kiosk playtest round (2026-10-19, corey in-engine).**
+Seven rulings from the first hands-on, one diagnosis worth enshrining:
+
+- **The apron was invisible and unsolid — one wound ring.** Godot's front
+  faces are clockwise-when-viewed-from-the-front; my ring's triangles crossed
+  to +Y, so their fronts pointed down: backface culling hid the ring from
+  above AND the trimesh (backface_collision defaults false) was non-solid from
+  above — walking past the disc edge fell into the void and the rescue
+  teleport read as "stuck." Fix is one index order; culling stays ON as the
+  canary for this bug class. The ring also sinks 0.1 m (`apron_drop` export)
+  under the voxel tops it z-fought.
+- **The shop exit freed the mouse — double-handled Esc, not Wayland.** The
+  kiosk's `_unhandled_input` closed the shop (`view_lens = ""`) and the same
+  Esc event then propagated to the player's handler, which no longer saw held
+  inputs and ran its own `ui_cancel` branch (`mouse_mode = VISIBLE`). Fix:
+  `set_input_as_handled()` after closing; plus the O-menu now stands down over
+  a foreign lens (shop/pour) instead of clobbering the flag.
+- **Two-stage click (law, GDD §3 shape):** click → interact detection first
+  (dispatches, eats the click, NO cooldown/clip — this also killed the
+  windup-latency bug where shop clicks waited out the 61-frame startup) → no
+  target? the swing starts → end of swing: the dig check. An interactable hit
+  at strike time is a drifted cursor: a whiff, never an interaction.
+- **Dig-jump renamed SHOVEL JUMP**, and it procs on ANY solid: dirt walls
+  (load-bearing climbing — wall hits confirmed in), dirt floors, and now the
+  non-diggable apron via the new `_strike_static` (clang, no dirt, jump if
+  armed). `dig_jump_velocity` → `shovel_jump_velocity`; `notify_dig_jump` →
+  `notify_shovel_jump`. GDD §3 amended.
+- **Shop view hides the body** (`set_body_visible(false)` on open, back on
+  close and at the pour's end — the waiter lift needs him visible). **Labels
+  live on the hover**: every clickable's Label3D children start hidden and
+  ride `set_hover` — price tags and SELL DIRT exist for the cursor, not the
+  wall. **Spawn flipped 180°** — first tried as a yaw π on the Player scene
+  node and it inverted the controls: movement keys off the RIG's local basis
+  (`rig.transform.basis * input`), so rotating the body rotated the camera but
+  not the walk direction. Final form: `spawn_yaw_deg` export (180) applied to
+  `rig.rotation.y` at boot — spawn facing is a rig concern, never a body-node
+  transform. **BGM plays tracks in full** — the 90 s cap export is gone;
+  the fade anchors at `length - 10 s` (fade_seconds export unchanged).
+
+**Addendum 36 — the apron bake, the shop layer swap, the teleport rescue
+(2026-10-19, second playtest round).**
+
+- **The apron is level geometry now.** The runtime-generated ring left a
+  void slit between the bedrock's outer face and the apron (south side, on
+  fresh setups — my mined-trench theory was wrong; the exact seam cause is
+  still unproven, which is the point). `bake_apron.gd` (scripts/tools/) bakes
+  the ring once into `apron_mesh.tres` + `apron_shape.tres` and main.tscn
+  carries honest MeshInstance3D + StaticBody3D + CollisionShape3D nodes —
+  editor-visible, hand-nudgeable. Inner radius is 48, tucked under the
+  undiggable rim across the entire circumference; the 0.1 m drop is the node's
+  transform, so the drop is an editor dial. Runtime `apron.gd` deleted.
+- **Shop-mode collision swap.** In the world the StallBody eats the cursor
+  and the products were unreachable through it; per ruling, the stall's
+  collider drops to layer 0 in shop mode (rays sail past it) while the
+  products and the SellZone come up — hover and clicks follow the rays
+  automatically. `_set_shop_collision` toggles on open/close/end-of-pour.
+- **The rescue is a teleport, nothing more.** The old `_rescue_player` re-ran
+  the entire boot loader — body rebuild, awaits, camera reset — which is how a
+  rescue could interleave with itself (the doubled rescues in the log) and
+  present a holeless world from the no-replay path. New shape: velocity to
+  zero, teleport to `_find_grounded_spawn` (ring-outward, each column's
+  top-most solid at ANY depth with a solid 3x3 landing row — the floor
+  guarantees a hit, so the mid-air origin failsafe loop is dead), one print.
+  `_physics_process` stands down entirely while `_sequence_active`, plus a
+  catch-all rescue below y = −2000. If a fresh-voxel world ever appears again,
+  the rescue is provably incapable of it and the terrain streaming itself gets
+  instrumented next.
+- **Diglog hygiene:** a strike that erases zero cells (a pure bedrock hit —
+  falling click-pogo) plays its clang and jumps, but no longer appends a
+  no-op sphere. Bedrock-pogo no longer bloats the log.
+
+**Addendum 37 — the apron's hole is the voxel rim's exact silhouette
+(2026-10-19, third playtest round).** The radial-trace bake still showed
+unpredictable gaps: the rim is a digital staircase, and its jogs outrun the
+128 traced segments — chords between traced vertices cross *outside* the
+voxel boundary wherever the rim is locally concave. corey's fix wins: the
+apron's hole is now the rim's EXACT shape. `bake_apron.gd` extracts the
+painted-cell union's boundary as a lattice loop (solid-on-left walk, ~404
+points at integer coordinates), shrinks it 0.05 m under the voxels, offsets
+it +5 m radially for the outer loop, and triangulates with the proven
+winding. No analytic circle exists anywhere in the pipeline — the apron
+cannot gap because its inner edge IS the rim. Tool self-checks: closed loop,
+point count, and the printed radius band (48.75..51.40 — the digital
+wobble, matching corey's 1 m/2 m seam measurements).
+

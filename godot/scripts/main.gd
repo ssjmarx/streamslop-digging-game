@@ -33,8 +33,10 @@ var _sequence_active := false
 var _skip_requested := false
 
 
-## Per frame: grow the floor ONLY inside the disc; rescue below the FLOOR, or fast outside it (the void).
+## Per frame: grow the floor ONLY inside the disc; rescue below the FLOOR, or fast outside it; stand down while a boot/rescue owns the loader.
 func _physics_process(_delta: float) -> void:
+	if _sequence_active:
+		return
 	var player := $Player as CharacterBody3D
 	var terrain := $Hole as VoxelTerrain
 	var depth := -player.global_position.y   # positive when below the surface
@@ -45,7 +47,8 @@ func _physics_process(_delta: float) -> void:
 			write_floor_blocks(terrain, old_floor, terrain.generator.depth_floor)
 	var rim_rescue: bool = not inside_disc and player.global_position.y < -void_rescue_depth
 	var floor_rescue: bool = player.global_position.y < -(terrain.generator.depth_floor + rescue_below_floor)
-	if rim_rescue or floor_rescue:
+	var void_rescue: bool = player.global_position.y < -2000.0   # the catch-all: nothing lives this deep
+	if rim_rescue or floor_rescue or void_rescue:
 		_rescue_player(player)
 
 
@@ -69,11 +72,46 @@ static func write_floor_blocks(terrain: VoxelTerrain, old_floor: int, new_floor:
 					push_warning("floor: try_set_block_data failed at %s" % Vector3i(ox, oy, oz))
 
 
-## Void rescue: snap to the nearest surface (never into your own hole), kill velocity, re-run the loading sequence.
+## Void rescue: a teleport, nothing more -- velocity dies, the player lands on grounded geometry, the terrain stays static.
 func _rescue_player(player: CharacterBody3D) -> void:
 	player.velocity = Vector3.ZERO
-	player.global_position = _find_surface_spawn($Hole as VoxelTerrain)
-	_boot_spawn_sequence(false, true)
+	player.global_position = _find_grounded_spawn($Hole as VoxelTerrain)
+	print("loader: rescue teleport -> %s" % player.global_position)
+
+
+## Grounded rescue spawn: ring-outward, the first column whose top-most solid (any depth) has a solid 3x3 row under it; the floor guarantees a hit.
+func _find_grounded_spawn(terrain: VoxelTerrain) -> Vector3:
+	var vt := terrain.get_voxel_tool()
+	vt.channel = VoxelBuffer.CHANNEL_TYPE
+	var gen := terrain.generator
+	var lowest := -int(gen.depth_floor)
+	for d in range(0, int(gen.WORLD_RADIUS)):
+		for x in range(-d, d + 1):
+			for z in [-d, d]:
+				var p := _grounded_on_column(vt, gen, x, z, lowest)
+				if p != Vector3.INF:
+					return p
+		for z in range(-d + 1, d):
+			for x in [-d, d]:
+				var p := _grounded_on_column(vt, gen, x, z, lowest)
+				if p != Vector3.INF:
+					return p
+	return Vector3(0.5, 1.1, 0.5)   # cannot happen: the floor exists; gravity sorts it out
+
+
+## The column's top solid (scanned to the floor); a landing only if the 3x3 row at that depth is solid -- ragged ledges skip.
+func _grounded_on_column(vt: VoxelTool, gen: VoxelGenerator, x: int, z: int, lowest: int) -> Vector3:
+	if Vector2(float(x) + 0.5, float(z) + 0.5).length() > float(gen.WORLD_RADIUS) - 1.0:
+		return Vector3.INF   # stay off the rim wall
+	for y in range(2, lowest - 1, -1):
+		if vt.get_voxel(Vector3i(x, y, z)) == 0:
+			continue
+		for nx in range(x - 1, x + 2):
+			for nz in range(z - 1, z + 2):
+				if vt.get_voxel(Vector3i(nx, y, nz)) == 0:
+					return Vector3.INF   # ragged ledge: another column will do
+		return Vector3(float(x) + 0.5, float(y) + 1.1, float(z) + 0.5)
+	return Vector3.INF
 
 
 ## Boot: rotate the sun, bake the library, start the loading sequence.
