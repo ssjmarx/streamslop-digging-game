@@ -10,6 +10,7 @@ const AimScript := preload("res://scripts/player/aim.gd")   # the shared targeti
 const SUN_ROTATION_DEG := Vector3(-50.0, 30.0, 0.0)
 const SPAWN_GROUND_AREA := AABB(Vector3(-2, -3, -2), Vector3(4, 4, 4))
 const LOADER_FAILSAFE_SECONDS := 15.0
+const REPLAY_SECONDS := 6.0   # the replay is locked to six seconds (ruling 2026-10-19)
 
 @export_group("Depth Floor")
 ## Meters of fresh dirt kept below the player; the floor grows ahead of her.
@@ -22,8 +23,6 @@ const LOADER_FAILSAFE_SECONDS := 15.0
 @export var void_rescue_depth := 20.0
 
 @export_group("Dig Sequence")
-## Target duration of the visual replay (scales with hole size; skippable).
-@export var dig_sequence_seconds := 6.0
 ## Seconds for the spectator -> FPV lerp after the third-person reveal.
 @export var sequence_lerp_seconds := 1.2
 ## Spectator height above the hole centroid for the opening shot.
@@ -158,6 +157,7 @@ func _boot_spawn_sequence(with_replay: bool, preserve_camera := false) -> void:
 		($HUD as CanvasLayer).set_loading(false)
 		_sequence_active = false
 	player.set_camera_mode(player.third_person if preserve_camera else false)   # step 6: boot lands FPV; a rescue keeps the mode it caught you in
+	GameState.stopwatch_reset()   # the stopwatch law: the run starts at control (Addendum 25)
 	player.on_ground_ready()
 
 
@@ -195,12 +195,13 @@ func _replay_bands(terrain: VoxelTerrain, entries: Array[Dictionary]) -> void:
 	var vt := terrain.get_voxel_tool()
 	vt.channel = VoxelBuffer.CHANNEL_TYPE
 	var total := sorted.size()
-	var budget := maxi(1, ceili(total / maxf(dig_sequence_seconds * 60.0, 1.0)))   # spheres per frame
+	var rate := float(total) / maxf(REPLAY_SECONDS * 60.0, 1.0)   # spheres per process frame, six seconds locked
 	var old_floor: int = terrain.generator.depth_floor
 	var i := 0
+	var credit := 0.0
 	while i < total:
-		var steps := 0
-		while i < total and steps < budget:
+		credit += rate
+		while i < total and credit >= 1.0:
 			var e: Dictionary = sorted[i]
 			var e_center: Vector3 = e.c
 			var need := floori(-e_center.y) + int(depth_margin)
@@ -209,7 +210,7 @@ func _replay_bands(terrain: VoxelTerrain, entries: Array[Dictionary]) -> void:
 				old_floor = terrain.generator.depth_floor
 			for cell in AimScript.cells_in_sphere(vt, e_center, e.r):
 				vt.set_voxel(cell, 0)
-			steps += 1
+			credit -= 1.0
 			i += 1
 		if _skip_requested:
 			break

@@ -84,6 +84,13 @@ func _update_hover() -> void:
 		_hovered.set_hover(true)
 
 
+## Shop-view clicks: the aim owns the virtual cursor, so it owns the click -- the hovered interactable dispatches and the event dies here.
+func _unhandled_input(event: InputEvent) -> void:
+	if GameState.view_lens == "shop" and event.is_action_pressed("dig") and _hovered != null:
+		_hovered.interact()
+		get_viewport().set_input_as_handled()
+
+
 ## The one aim ray: head origin + camera direction; in shop view it is the virtual cursor's ray from the shop camera.
 func swing_query(range_m: float) -> Dictionary:
 	var camera := get_viewport().get_camera_3d()

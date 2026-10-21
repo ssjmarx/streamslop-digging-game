@@ -13,15 +13,21 @@ const SHOVELS := [
 	{"name": "Garden Trowel", "short": "trowel", "radius": 1.7, "cost": 250},
 	{"name": "Pro Shovel 3000", "short": "regular", "radius": 2.3, "cost": 2000},
 	{"name": "Ergonomic Shovel", "short": "ergonomic", "radius": 2.3, "cost": 25000},
+	{"name": "Snow Shovel", "short": "snow", "radius": 0.0, "cost": 2000},
 ]
+
+signal shovel_changed
 
 # -- State ------
 
 var dirt := 0
 var money := 0
-var shovel_tier := 0
+var shovel_tier := 0          # the EQUIPPED shovel; snow (the last rung) digs nothing
+var shovel_owned := 0         # the highest owned LADDER rung (0-3); snow is tracked below
+var snow_owned := false       # the scam: purchasable anytime, digs nothing
 var best_depth := 0.0
 var stopwatch_owned := false   # the meta item, $600 once (GDD §6e); runs forever after
+var stopwatch_start_frame := 0   # physics frames at control-gain; the HUD reads the delta
 var surrender_declined := 0   # hidden. GDD §9. surfaced nowhere.
 
 var wardrobe := {}            # the player's kit; schema lives in player/wardrobe.gd
@@ -63,6 +69,35 @@ func _on_dirt_sold(_amount: int, price: int, _by_peer: int) -> void:
 	touch()
 
 
+## The stopwatch law (§6e): the run starts at control-gain; the pour's end calls this again for the sell's silent zero.
+func stopwatch_reset() -> void:
+	stopwatch_start_frame = Engine.get_physics_frames()
+
+
+## Ladder purchase: claim rung `tier` and equip it. Money validated by the caller.
+func purchase_shovel(tier: int) -> void:
+	shovel_owned = maxi(shovel_owned, tier)
+	set_shovel_tier(tier)
+
+
+## The scam: buyable anytime, digs nothing (ruling: price equal to the pro).
+func purchase_snow() -> void:
+	snow_owned = true
+	set_shovel_tier(SHOVELS.size() - 1)
+
+
+## Equip any owned shovel; fires the held-viewmodel swap.
+func set_shovel_tier(tier: int) -> void:
+	shovel_tier = clampi(tier, 0, SHOVELS.size() - 1)
+	touch()
+	shovel_changed.emit()
+
+
+## Debug only (restored 2026-10-19): cycle the whole list incl. snow, ownership ignored -- the kiosk is the player path, this is the wrench.
+func cycle_shovel_tier(dir: int) -> void:
+	set_shovel_tier(wrapi(shovel_tier + dir, 0, SHOVELS.size()))
+
+
 ## The menu writes the whole kit on every change; saved immediately.
 func set_wardrobe(kit: Dictionary) -> void:
 	wardrobe = kit
@@ -102,6 +137,7 @@ func save_now() -> void:
 		return
 	f.store_string(JSON.stringify({
 		"state": {"dirt": dirt, "money": money, "shovel_tier": shovel_tier,
+			"shovel_owned": shovel_owned, "snow_owned": snow_owned,
 			"best_depth": best_depth, "stopwatch_owned": stopwatch_owned},
 		"wardrobe": wardrobe,
 		"sign": _sign,
@@ -123,6 +159,8 @@ func _load() -> void:
 	dirt = int(state.get("dirt", 0))
 	money = int(state.get("money", 0))
 	shovel_tier = clampi(int(state.get("shovel_tier", 0)), 0, SHOVELS.size() - 1)
+	shovel_owned = clampi(int(state.get("shovel_owned", 0)), 0, 3)
+	snow_owned = bool(state.get("snow_owned", false))
 	best_depth = float(state.get("best_depth", 0.0))
 	stopwatch_owned = bool(state.get("stopwatch_owned", false))
 	wardrobe = _dict_of(data, "wardrobe")

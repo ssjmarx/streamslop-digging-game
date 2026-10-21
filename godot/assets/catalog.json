@@ -136,8 +136,23 @@
      "meshes/quaternius/megakit/T_Trim_Props_Normal.png",
      "meshes/quaternius/megakit/T_Trim_Props_ORM.png"
    ]},
-  {"id": "mesh_stopwatch_01", "name": "Stopwatch (21,299 verts; small-item budget 500 -- decimate pending)", "author": "febrianes86 (Pixabay)", "license": "Pixabay Content License",
-   "verts": 21299,
-   "paths": ["meshes/pixabay/stopwatch.glb"]}
+  {"id": "mesh_stopwatch_01", "name": "Stopwatch (582 verts; small-item budget 500 -- accepted by ruling)", "author": "febrianes86 (Pixabay)", "license": "Pixabay Content License",
+   "verts": 582,
+   "paths": ["meshes/pixabay/stopwatch.glb"]},
+  {"id": "mesh_shovel_toy",  "name": "Shovel Toy (Survival Pack, 129 verts)", "author": "Quaternius", "license": "CC0",
+   "verts": 129,
+   "paths": ["meshes/quaternius/survival/Shovel_Toy.obj", "meshes/quaternius/survival/Shovel_Toy.mtl"]},
+  {"id": "mesh_shovel_ergo", "name": "Shovel Ergo (Survival Pack, 161 verts)", "author": "Quaternius", "license": "CC0",
+   "verts": 161,
+   "paths": ["meshes/quaternius/survival/Shovel_Ergo.obj", "meshes/quaternius/survival/Shovel_Ergo.mtl"]},
+  {"id": "mesh_shovel_snow", "name": "Shovel Snow (Survival Pack, 161 verts)", "author": "Quaternius", "license": "CC0",
+   "verts": 161,
+   "paths": ["meshes/quaternius/survival/Shovel_Snow.obj", "meshes/quaternius/survival/Shovel_Snow.mtl"]},
+  {"id": "mesh_shovel_stairs", "name": "Shovel Stairs (Survival Pack, 161 verts)", "author": "Quaternius", "license": "CC0",
+   "verts": 161,
+   "paths": ["meshes/quaternius/survival/Shovel_Stairs.obj", "meshes/quaternius/survival/Shovel_Stairs.mtl"]},
+  {"id": "char_worker", "name": "Worker (Ultimate Modular Men, 10,534 verts)", "author": "Quaternius", "license": "CC0",
+   "verts": 10534,
+   "paths": ["characters/quaternius/worker/Worker.gltf"]}
 ]
 

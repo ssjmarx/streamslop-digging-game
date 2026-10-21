@@ -4,6 +4,9 @@
 extends Node3D
 
 const STOPWATCH_PRICE := 600   # GDD §6e law: $600, tooltip "Stopwatch.", nothing else
+const SNOW_COST := 2000        # the scam prices like the pro (ruling 2026-10-19)
+const SHOVEL_TOP := 3          # the ladder's top rung; snow lives outside the ladder
+const POUR_SECONDS := 6.0      # the pour is locked to six seconds (ruling 2026-10-19)
 
 @export_group("Shop View")
 ## Mouse-delta to virtual-cursor pixels while the shop view holds the mouse.
@@ -11,9 +14,8 @@ const STOPWATCH_PRICE := 600   # GDD §6e law: $600, tooltip "Stopwatch.", nothi
 @export_group("Pour")
 ## Height of the overhead pour camera above the hole (the boot spectator's twin).
 @export var pour_camera_height := 30.0
-## Data-block rows re-emitted per physics frame while the pour rises. The rate
-## law: it must outrun every shovel, forever -- never tune it slower (§6c).
-@export var pour_rows_per_frame := 2
+## Seconds before the fill starts -- the overhead glide should land first.
+@export var pour_lead_seconds := 0.45
 
 var _cursor := Vector2.ZERO      # the virtual cursor's screen point in shop view
 var _pouring := false
@@ -23,9 +25,20 @@ var _pour_cam: Camera3D = null   # created per pour, freed on close
 @onready var _shop_camera: Camera3D = $ShopCamera
 
 
-## Boot: price tags read live state (the watch ships author materials; the hand pass is corey's).
+## Boot: world-mode collision from frame one; the Worker's idle; live price tags.
 func _ready() -> void:
+	_set_shop_collision(false)
+	_shopkeeper_idle()
 	_refresh_price_tags()
+
+
+## The shopkeeper's idle: his own pack's clips (UMM names, not UAL); fails safe.
+func _shopkeeper_idle() -> void:
+	var anim_player := _find_anim_player($Shopkeeper)
+	if anim_player == null:
+		return
+	if anim_player.has_animation("Idle"):
+		anim_player.play("Idle")
 
 
 ## Route one eaten click from a clickable (the shop's only front door).
@@ -39,7 +52,10 @@ func dispatch(action: String, tier := 0) -> void:
 				_begin_sale()
 		"buy_tier":
 			if GameState.view_lens == "shop":
-				_buy_tier(tier)
+				_shovel_click(tier)
+		"buy_snow":
+			if GameState.view_lens == "shop":
+				_snow_click()
 		"buy_stopwatch":
 			if GameState.view_lens == "shop":
 				_buy_stopwatch()
@@ -91,7 +107,7 @@ func _close_shop() -> void:
 func _set_shop_collision(shop: bool) -> void:
 	$StallBody.collision_layer = 0 if shop else 1
 	var product_layer := 1 if shop else 0
-	for node in [$Shopkeeper/SellZone, $Items/Trowel, $Items/Pro, $Items/Ergonomic, $Items/Stopwatch]:
+	for node in [$Shopkeeper/SellZone, $Items/Trowel, $Items/Pro, $Items/Ergonomic, $Items/Snow, $Items/Stopwatch]:
 		(node as CollisionObject3D).collision_layer = product_layer
 
 
@@ -107,7 +123,7 @@ func _begin_sale() -> void:
 
 # -- Pour (the theater is mandatory; the rate is a safety invariant) ------
 
-## The pour: the hole fills bottom-up under the overhead lens -- the fill and the cull are the same write.
+## The pour: a checker disk rises from the hole's bottom under the overhead lens; slabs re-emit behind it, hidden.
 func _begin_pour(carried: int) -> void:
 	_pouring = true
 	_skip_requested = false
@@ -120,27 +136,38 @@ func _begin_pour(carried: int) -> void:
 	var generator := terrain.generator
 	var block_size: int = generator.BLOCK_SIZE
 	var radius: int = generator.WORLD_RADIUS
-	var by := -ceili(float(generator.depth_floor) / float(block_size)) * block_size   # slab-aligned bottom
-	var bottom := by
-	var done := 0
-	while by < 0:
-		_fill_row(terrain, by, block_size, radius)
-		by += block_size
-		done += 1
-		if done >= pour_rows_per_frame and by < 0:
-			_lift_waiter(terrain, player, float(by))
-			if _skip_requested:
-				break
-			await get_tree().physics_frame
-			done = 0
+	# the theater floor: the hole's deepest dug point, never deeper than -100m
+	var start_y := -float(generator.depth_floor)
+	var diglog_reader := get_tree().get_first_node_in_group("diglog")
+	if diglog_reader != null:
+		for entry in diglog_reader.read_entries():
+			start_y = maxf(start_y, float(entry.c.y) - float(entry.r))
+	start_y = maxf(start_y, -100.0)
+	var disk := _make_fill_disk(start_y)
+	var slab_bottom := -ceili(float(generator.depth_floor) / float(block_size)) * block_size   # slab-aligned bottom
+	var by := slab_bottom
+	await get_tree().create_timer(pour_lead_seconds).timeout   # the glide lands before the rise starts
+	var rise_per_frame := -start_y / (POUR_SECONDS * float(Engine.physics_ticks_per_second))
+	while disk.global_position.y < 0.0:
+		await get_tree().physics_frame
+		if _skip_requested:
+			break
+		disk.global_position.y = minf(disk.global_position.y + rise_per_frame, 0.0)
+		var fill_to := disk.global_position.y
+		while by < 0 and float(by + block_size) <= fill_to + 0.001:
+			_fill_row(terrain, by, block_size, radius)
+			by += block_size
+		_lift_waiter(terrain, player, fill_to)
+	disk.visible = false
 	if _skip_requested:   # the end state must be complete even when skipped
 		while by < 0:
 			_fill_row(terrain, by, block_size, radius)
 			by += block_size
 	_lift_waiter(terrain, player, 0.0)
+	disk.queue_free()
 	# the floor law returns: below START_DEPTH is void again, byte-identical to a fresh boot
 	generator.depth_floor = 20
-	var slab := bottom
+	var slab := slab_bottom
 	while slab < 0:
 		_fill_row(terrain, slab, block_size, radius)
 		slab += block_size
@@ -155,6 +182,45 @@ func _begin_pour(carried: int) -> void:
 	_end_pour()
 
 
+## The theater disk: checker quads that read as the voxel tops, rising with the fill.
+func _make_fill_disk(start_y: float) -> MeshInstance3D:
+	var cell := 8   # the checker's size, matching dirt_checker_generator
+	var light := Color(0.58, 0.42, 0.29)   # the light dirt's top color
+	var dark := Color(0.33, 0.22, 0.14)    # the dark dirt's top color
+	var verts := PackedVector3Array()
+	var colors := PackedColorArray()
+	var indices := PackedInt32Array()
+	var vertex := 0
+	for cz in range(-56, 56, cell):
+		for cx in range(-56, 56, cell):
+			var nearest_x := clampi(0, cx, cx + cell)
+			var nearest_z := clampi(0, cz, cz + cell)
+			if Vector2(nearest_x, nearest_z).length() > 49.0:
+				continue   # stay inside the undiggable rim wall
+			var parity := posmod(floori(cx / float(cell)) + floori(cz / float(cell)), 2)
+			var color := light if parity == 0 else dark
+			for corner in [Vector3(cx, 0, cz), Vector3(cx + cell, 0, cz), Vector3(cx + cell, 0, cz + cell), Vector3(cx, 0, cz + cell)]:
+				verts.append(corner)
+				colors.append(color)
+			indices.append_array([vertex, vertex + 1, vertex + 2, vertex, vertex + 2, vertex + 3])
+			vertex += 4
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var mat := StandardMaterial3D.new()
+	mat.vertex_color_use_as_albedo = true   # the terrain's own trick
+	mesh.surface_set_material(0, mat)
+	var disk := MeshInstance3D.new()
+	disk.mesh = mesh
+	get_tree().current_scene.add_child(disk)
+	disk.global_position = Vector3(0.0, start_y, 0.0)
+	return disk
+
+
 ## The pour winds down: leave the overhead lens, hand the world (and the body) back.
 func _end_pour() -> void:
 	if _pour_cam != null:
@@ -167,6 +233,7 @@ func _end_pour() -> void:
 	if player != null:
 		player.exit_lens()
 		player.set_body_visible(true)
+	GameState.stopwatch_reset()   # the sell's silent zero: the run restarts at control
 	_refresh_price_tags()
 
 
@@ -207,7 +274,7 @@ func _make_pour_camera() -> Camera3D:
 	_pour_cam.look_at(Vector3.ZERO, Vector3.FORWARD)
 	return _pour_cam
 
-## The theater: Spell_Enter into the Idle loop when the UAL clips exist; the placeholder fails safe.
+## The theater: Spell clips on UAL rigs, the UMM Interact as the stand-in; a bare placeholder fails safe.
 func _play_spellcast() -> void:
 	var anim_player := _find_anim_player($Shopkeeper)
 	if anim_player == null:
@@ -216,18 +283,37 @@ func _play_spellcast() -> void:
 		anim_player.play("Spell_Simple_Enter")
 		if anim_player.has_animation("Spell_Simple_Idle"):
 			anim_player.queue("Spell_Simple_Idle")
+	elif anim_player.has_animation("Interact"):
+		anim_player.play("Interact")
 
 
-## Tier purchase: next-tier only, full price, no credit (the [ ] cycler is dead).
-func _buy_tier(tier: int) -> void:
-	if tier != GameState.shovel_tier + 1 or tier >= GameState.SHOVELS.size():
+## A shovel display click: buy the next ladder rung, or re-equip an owned one for free.
+func _shovel_click(tier: int) -> void:
+	if tier <= GameState.shovel_owned:
+		GameState.set_shovel_tier(tier)   # owned: equip for free
+		$UiClick.play()
 		return
+	if tier != GameState.shovel_owned + 1 or tier > SHOVEL_TOP:
+		return   # locked until you own the rung below; the ladder never reaches snow
 	var cost: int = GameState.SHOVELS[tier]["cost"]
 	if GameState.money < cost:
 		return
 	GameState.money -= cost
-	GameState.shovel_tier = tier
-	GameState.touch()
+	GameState.purchase_shovel(tier)
+	$UiClick.play()
+	_refresh_price_tags()
+
+
+## The meta scam: pro money, buys anytime, digs nothing -- and the shopkeeper does not care.
+func _snow_click() -> void:
+	if GameState.snow_owned:
+		GameState.set_shovel_tier(GameState.SHOVELS.size() - 1)   # re-equip your mistake
+		$UiClick.play()
+		return
+	if GameState.money < SNOW_COST:
+		return
+	GameState.money -= SNOW_COST
+	GameState.purchase_snow()
 	$UiClick.play()
 	_refresh_price_tags()
 
@@ -243,19 +329,24 @@ func _buy_stopwatch() -> void:
 	_refresh_price_tags()
 
 
-## Price tags read live state: bought tiers and the watch read OWNED.
+## Price tags read live state: owned shovels and the watch read PURCHASED (the weapon wheel owns swapping later).
 func _refresh_price_tags() -> void:
 	var trowel: Dictionary = GameState.SHOVELS[1]
 	var pro: Dictionary = GameState.SHOVELS[2]
 	var ergo: Dictionary = GameState.SHOVELS[3]
-	$Items/Trowel/Price.text = "OWNED" if GameState.shovel_tier >= 1 \
-			else "%s -- $%d" % [trowel["name"], trowel["cost"]]
-	$Items/Pro/Price.text = "OWNED" if GameState.shovel_tier >= 2 \
-			else "%s -- $%d" % [pro["name"], pro["cost"]]
-	$Items/Ergonomic/Price.text = "OWNED" if GameState.shovel_tier >= 3 \
-			else "%s -- $%d" % [ergo["name"], ergo["cost"]]
-	$Items/Stopwatch/Price.text = "OWNED" if GameState.stopwatch_owned \
+	$Items/Trowel/Price.text = _shovel_tag(GameState.shovel_owned >= 1, trowel)
+	$Items/Pro/Price.text = _shovel_tag(GameState.shovel_owned >= 2, pro)
+	$Items/Ergonomic/Price.text = _shovel_tag(GameState.shovel_owned >= 3, ergo)
+	$Items/Snow/Price.text = "PURCHASED" if GameState.snow_owned else "SNOW SHOVEL -- $%d" % SNOW_COST
+	$Items/Stopwatch/Price.text = "PURCHASED" if GameState.stopwatch_owned \
 			else "STOPWATCH -- $%d" % STOPWATCH_PRICE
+
+
+## A shovel tag: PURCHASED when owned, otherwise the name and price.
+func _shovel_tag(owned: bool, shovel: Dictionary) -> String:
+	if owned:
+		return "PURCHASED"
+	return "%s -- $%d" % [shovel["name"], shovel["cost"]]
 
 
 ## First AnimationPlayer under the node, depth-first; null when none.

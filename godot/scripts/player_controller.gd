@@ -79,21 +79,26 @@ extends CharacterBody3D
 ## Head bone scale while tucked (0.001 = a speck).
 @export var fp_head_tuck_scale := 0.001
 @export_group("Held Shovel")
-## Meters blade-to-grip; normalized from the OBJ's AABB. Live dial.
-@export var shovel_target_length := 1.1:
+## Per-tier blade-to-grip length; normalized from each mesh's AABB. Live dials -- five slots, bespoke per shovel.
+@export var held_lengths: Array[float] = [1.1, 1.1, 1.1, 1.1, 1.1]:
 	set(value):
-		shovel_target_length = value
-		_apply_shovel_pose()
-## Sit in the fist. Live dial.
-@export var shovel_offset := Vector3(0.06, 0.0, 0.12):
+		held_lengths = value
+		_apply_held_shovel()
+## Per-tier fist offset. Live dials -- five slots, bespoke per shovel.
+@export var held_offsets: Array[Vector3] = [Vector3(0.06, 0, 0.12), Vector3(0.06, 0, 0.12), Vector3(-0.03, 0.07, 0.12), Vector3(0.06, 0, 0.12), Vector3(0.06, 0, 0.12)]:
 	set(value):
-		shovel_offset = value
-		_apply_shovel_pose()
-## Grip along the hand, blade out. Live dial.
-@export var shovel_rot_deg := Vector3(-90.0, 0.0, 0.0):
+		held_offsets = value
+		_apply_held_shovel()
+## Per-tier grip rotation (degrees). Live dials -- five slots, bespoke per shovel.
+@export var held_rotations: Array[Vector3] = [Vector3(-90, 0, 0), Vector3(-90, 0, 0), Vector3(-97.315, 0, -6.85), Vector3(-90, 0, 0), Vector3(-90, 0, 0)]:
 	set(value):
-		shovel_rot_deg = value
-		_apply_shovel_pose()
+		held_rotations = value
+		_apply_held_shovel()
+## Per-tier tint; WHITE leaves the mesh's own materials alone. Slot 0 is the toy's bright plastic.
+@export var held_tints: Array[Color] = [Color(1.0, 0.82, 0.1), Color(1, 1, 1), Color(1, 1, 1), Color(1, 1, 1), Color(1, 1, 1)]:
+	set(value):
+		held_tints = value
+		_apply_held_shovel()
 @export_group("Lens")
 ## Seconds the view glides into/out of a held lens (wardrobe; shop/pour inherit the machinery).
 @export var lens_lerp_seconds := 0.35
@@ -126,7 +131,13 @@ const UAL2_SCENE := "res://assets/animations/ual2/UAL2_Standard.glb"
 const WARDROBE_SCRIPT := preload("res://scripts/player/wardrobe.gd")
 const WARDROBE_MENU := preload("res://scripts/ui/wardrobe_menu.gd")
 const HAND_BONE := "hand_r"   # universal rig right hand; the shovel rides it
-const SHOVEL_MESH := "res://assets/meshes/quaternius/survival/Shovel.obj"   # OBJ: loads as Mesh, not a scene
+const SHOVEL_MESHES := [   # per-tier held viewmodels; the toy slot wears the held_tints plastic
+	"res://assets/meshes/quaternius/survival/Shovel_Toy.obj",
+	"res://assets/meshes/quaternius/survival/Shovel_Toy.obj",
+	"res://assets/meshes/quaternius/survival/Shovel.obj",
+	"res://assets/meshes/quaternius/survival/Shovel_Ergo.obj",
+	"res://assets/meshes/quaternius/survival/Shovel_Snow.obj",
+]
 
 
 ## Clip names as the importer leaves them (it strips the glb's "_Loop"
@@ -188,6 +199,7 @@ var _avatar_meshes: Array[MeshInstance3D] = []   # the real avatar's meshes; cas
 func _ready() -> void:
 	add_to_group("player")   # the HUD reads us by group; nothing set this before 0.0.2 (depth was pinned at 0.0)
 	rig.rotation.y = deg_to_rad(spawn_yaw_deg)   # the look pivot faces the shop; NEVER rotate the body for this
+	GameState.shovel_changed.connect(_apply_held_shovel)   # buy/re-equip swaps the held viewmodel
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	boom.add_excluded_object(get_rid())
 	_apply_fp_near_plane()
@@ -384,9 +396,10 @@ func _run_lens_lerp(dest: Camera3D, land_mode: bool) -> void:
 		_lens_transit = Camera3D.new()
 		add_child(_lens_transit)
 	var src := from.global_transform
-	_lens_transit.fov = from.fov
+	var src_fov := from.fov   # captured: transient sources (the pour cam) may be freed mid-glide
 	_lens_transit.near = from.near
 	_lens_transit.global_transform = src
+	_lens_transit.fov = src_fov
 	_lens_transit.make_current()
 	var t := 0.0
 	while t < 1.0:
@@ -395,7 +408,7 @@ func _run_lens_lerp(dest: Camera3D, land_mode: bool) -> void:
 			return   # superseded: the newer transition owns the lens
 		var w := smoothstep(0.0, 1.0, t)
 		_lens_transit.global_transform = src.interpolate_with(dest.global_transform, w)
-		_lens_transit.fov = lerpf(from.fov, dest.fov, w)   # fov rides the glide: the dressing lens frames tighter
+		_lens_transit.fov = lerpf(src_fov, dest.fov, w)   # fov rides the glide: the dressing lens frames tighter
 		await get_tree().process_frame
 	if seq != _lens_seq:
 		return
@@ -560,11 +573,8 @@ func _collect_mesh_instances(node: Node, out: Array[MeshInstance3D]) -> void:
 		_collect_mesh_instances(child, out)
 
 
-## Held shovel: the Survival Pack OBJ on the right hand; AABB-normalized, pose by dials.
+## Held shovel: the per-tier Survival Pack OBJ on the right hand; mesh + pose by dials.
 func _attach_shovel(avatar: Node) -> void:
-	var shovel_mesh: Mesh = load(SHOVEL_MESH)
-	if shovel_mesh == null:
-		return
 	var skeleton := _find_skeleton(avatar)
 	if skeleton == null or skeleton.find_bone(HAND_BONE) == -1:
 		return
@@ -572,23 +582,35 @@ func _attach_shovel(avatar: Node) -> void:
 	attach.bone_name = HAND_BONE
 	skeleton.add_child(attach)
 	var instance := MeshInstance3D.new()
-	instance.mesh = shovel_mesh
-	var diagonal := shovel_mesh.get_aabb().size.length()
-	_shovel_diagonal = diagonal
 	_shovel = instance
 	attach.add_child(instance)
-	_apply_shovel_pose()
-	print("shovel: attached to %s (raw mesh diagonal %.2fm)" % [HAND_BONE, diagonal])
+	_apply_held_shovel()
+	print("shovel: attached to %s (tier %d)" % [HAND_BONE, GameState.shovel_tier])
 
 
-## Live-apply the shovel pose: the Held Shovel setters call this; no-op without a shovel.
-func _apply_shovel_pose() -> void:
+## Live-apply the held shovel for the equipped tier: mesh, tint, and the per-shovel pose.
+func _apply_held_shovel() -> void:
 	if _shovel == null:
 		return
-	_shovel.position = shovel_offset
-	_shovel.rotation_degrees = shovel_rot_deg
+	var tier := clampi(GameState.shovel_tier, 0, SHOVEL_MESHES.size() - 1)
+	var shovel_mesh: Mesh = load(SHOVEL_MESHES[tier])
+	if shovel_mesh != null:
+		_shovel.mesh = shovel_mesh
+		_shovel_diagonal = shovel_mesh.get_aabb().size.length()
+	var offset := held_offsets[tier] if tier < held_offsets.size() else Vector3(0.06, 0, 0.12)
+	var rot := held_rotations[tier] if tier < held_rotations.size() else Vector3(-90, 0, 0)
+	var length := held_lengths[tier] if tier < held_lengths.size() else 1.1
+	_shovel.position = offset
+	_shovel.rotation_degrees = rot
 	if _shovel_diagonal > 0.001:
-		_shovel.scale = Vector3.ONE * (shovel_target_length / _shovel_diagonal)
+		_shovel.scale = Vector3.ONE * (length / _shovel_diagonal)
+	if tier < held_tints.size() and held_tints[tier] != Color.WHITE:
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = held_tints[tier]
+		mat.roughness = 0.6   # the toy's bright plastic look
+		_shovel.material_override = mat
+	else:
+		_shovel.material_override = null
 
 
 ## Merge all UAL clips into the avatar's default library, re-loop LOOPERS; returns bound count.

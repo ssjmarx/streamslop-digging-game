@@ -9,13 +9,13 @@
 [ext_resource type="AudioStream" uid="uid://btvsh507brxp" path="res://assets/sfx/kenney/ui/switch2.ogg" id="7_switch"]
 [ext_resource type="AudioStream" uid="uid://c1odicpi65smf" path="res://assets/sfx/kenney/voice/ready.ogg" id="8_vopen"]
 [ext_resource type="AudioStream" uid="uid://okcn3ohp1w26" path="res://assets/sfx/kenney/voice/mission_completed.ogg" id="9_vsold"]
+[ext_resource type="ArrayMesh" uid="uid://bm05iip1w6wnv" path="res://assets/meshes/quaternius/survival/Shovel_Toy.obj" id="10_toy"]
+[ext_resource type="ArrayMesh" uid="uid://dihnqudx7624w" path="res://assets/meshes/quaternius/survival/Shovel_Ergo.obj" id="14_ergo"]
+[ext_resource type="ArrayMesh" uid="uid://ec3r4e4mgoe0" path="res://assets/meshes/quaternius/survival/Shovel_Snow.obj" id="15_snow"]
+[ext_resource type="PackedScene" uid="uid://calvtsxerocj0" path="res://assets/characters/quaternius/worker/Worker.gltf" id="16_worker"]
 
 [sub_resource type="BoxShape3D" id="stall_shape"]
 size = Vector3(2.2, 2.7, 1.4)
-
-[sub_resource type="CapsuleMesh" id="keeper_mesh"]
-radius = 0.4
-height = 1.8
 
 [sub_resource type="CapsuleShape3D" id="keeper_shape"]
 radius = 0.4
@@ -23,9 +23,6 @@ height = 1.8
 
 [sub_resource type="BoxShape3D" id="item_shape"]
 size = Vector3(0.5, 0.5, 0.5)
-
-[sub_resource type="StandardMaterial3D" id="trowel_tint"]
-albedo_color = Color(0.55, 0.35, 0.2, 1)
 
 [node name="Kiosk" type="Node3D" unique_id=1873563395 groups=["kiosk"]]
 script = ExtResource("1_kiosk")
@@ -46,16 +43,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 0, 0.55)
 script = ExtResource("2_click")
 action = "sell"
 
-[node name="Placeholder" type="MeshInstance3D" parent="Shopkeeper/SellZone" unique_id=66989299]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42693245, 0.9, 0.12060666)
-mesh = SubResource("keeper_mesh")
+[node name="Worker" parent="Shopkeeper/SellZone" unique_id=1492147245 instance=ExtResource("16_worker")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.3565297, 0, 0.5683457)
 
 [node name="Shape" type="CollisionShape3D" parent="Shopkeeper/SellZone" unique_id=2095615537]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("keeper_shape")
 
 [node name="SellBillboard" type="Label3D" parent="Shopkeeper/SellZone" unique_id=1111133740]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42171854, 1.8815165, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38170338, 1.7261624, -0.3128301)
 pixel_size = 0.004
 billboard = 1
 text = "SELL DIRT"
@@ -68,7 +64,7 @@ stream = ExtResource("8_vopen")
 stream = ExtResource("9_vsold")
 
 [node name="ShopCamera" type="Camera3D" parent="." unique_id=1731071753]
-transform = Transform3D(-1, 1.7763568e-15, -8.742278e-08, -2.262668e-08, 0.9659259, 0.25881907, 8.444392e-08, 0.25881907, -0.9659258, 0, 1.5008388, -2.1785932)
+transform = Transform3D(-1, -1.5430008e-14, -8.742276e-08, -3.9563133e-08, 0.89173937, 0.45254946, 7.7958305e-08, 0.45254946, -0.89173937, 0, 1.7845218, -1.6899438)
 fov = 55.0
 
 [node name="Items" type="Node3D" parent="." unique_id=939566098]
@@ -83,9 +79,8 @@ tier = 1
 shape = SubResource("item_shape")
 
 [node name="Mesh" type="MeshInstance3D" parent="Items/Trowel" unique_id=645789655]
-transform = Transform3D(0.22, 0, 0, 0, 0.20210932, -0.08690122, 0, 0.08690122, 0.20210932, 0, -0.53191876, -0.7273116)
-material_override = SubResource("trowel_tint")
-mesh = ExtResource("5_shovel")
+transform = Transform3D(0.16630058, 0.14399907, -0.0028931117, -2.4424906e-17, -0.004419168, -0.21995561, -0.14402814, 0.16626705, -0.003340502, 0.22019762, -0.21936929, 0.2919743)
+mesh = ExtResource("10_toy")
 
 [node name="Price" type="Label3D" parent="Items/Trowel" unique_id=297571995]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.46438158, 0.54999995, 0)
@@ -105,7 +100,7 @@ tier = 2
 shape = SubResource("item_shape")
 
 [node name="Mesh" type="MeshInstance3D" parent="Items/Pro" unique_id=316270297]
-transform = Transform3D(0.25, 0, 0, 0, 0.22966969, -0.09875139, 0, 0.09875139, 0.22966969, -0.27174675, -0.53191876, -0.7273116)
+transform = Transform3D(0.25, 0, 0, 0, 0.22966969, -0.09875139, 0, 0.09875139, 0.22966969, -0.40005428, -0.53191876, -0.6598371)
 mesh = ExtResource("5_shovel")
 
 [node name="Price" type="Label3D" parent="Items/Pro" unique_id=901847832]
@@ -126,14 +121,34 @@ tier = 3
 shape = SubResource("item_shape")
 
 [node name="Mesh" type="MeshInstance3D" parent="Items/Ergonomic" unique_id=291003652]
-transform = Transform3D(0.25, 0, 0, 0, 0.22966969, -0.09875139, 0, 0.09875139, 0.22966969, -0.57673424, -0.53191876, -0.7273116)
-mesh = ExtResource("5_shovel")
+transform = Transform3D(0.25, 0, 0, 0, 0.22966969, -0.09875139, 0, 0.09875139, 0.22966969, -1.252119, -0.53191876, -0.8083574)
+mesh = ExtResource("14_ergo")
 
 [node name="Price" type="Label3D" parent="Items/Ergonomic" unique_id=1484167518]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7102896, 0.54999995, 0)
 pixel_size = 0.003
 billboard = 1
 text = "ERGONOMIC SHOVEL -- $25000"
+font_size = 40
+outline_size = 10
+
+[node name="Snow" type="StaticBody3D" parent="Items" unique_id=1277347237 groups=["interactable"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 1.05, 0.1)
+script = ExtResource("2_click")
+action = "buy_snow"
+
+[node name="Shape" type="CollisionShape3D" parent="Items/Snow" unique_id=2136789769]
+shape = SubResource("item_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Items/Snow" unique_id=773166180]
+transform = Transform3D(0.25, 0, 0, 0, 0.22966969, -0.09875139, 0, 0.09875139, 0.22966969, -0.32176125, -0.53191876, -0.6794821)
+mesh = ExtResource("15_snow")
+
+[node name="Price" type="Label3D" parent="Items/Snow" unique_id=1132345676]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1539474, 0.54999995, 0)
+pixel_size = 0.003
+billboard = 1
+text = "SNOW SHOVEL -- $2000"
 font_size = 40
 outline_size = 10
 
@@ -147,7 +162,7 @@ transform = Transform3D(-1, 0, -8.742278e-08, -8.742278e-08, -4.371139e-08, 1, -
 shape = SubResource("item_shape")
 
 [node name="Watch" parent="Items/Stopwatch" unique_id=1832319938 instance=ExtResource("4_watch")]
-transform = Transform3D(-0.1, 0, -8.742278e-09, -8.742278e-09, -4.371139e-09, 0.1, -3.8213711e-16, 0.1, 4.371139e-09, -0.5896055, -0.039910555, -0.34128872)
+transform = Transform3D(-0.1, 0, -8.742278e-09, -8.742278e-09, -4.371139e-09, 0.1, -3.8213711e-16, 0.1, 4.371139e-09, -0.8591535, -0.039910555, 0.00915321)
 
 [node name="Price" type="Label3D" parent="Items/Stopwatch" unique_id=1479414297]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.4348342, 0.54999995, 0)

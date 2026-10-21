@@ -1028,3 +1028,83 @@ cannot gap because its inner edge IS the rim. Tool self-checks: closed loop,
 point count, and the printed radius band (48.75..51.40 — the digital
 wobble, matching corey's 1 m/2 m seam measurements).
 
+**Addendum 38 — pt4: the shelves fill, the watch runs, the Worker clocks in
+(2026-10-19).** corey's Blender + sourcing pass landed and pt4 wired it:
+
+- **The shovel set is real.** Shovel_Toy/Ergo/Snow/Stairs promoted from the
+  Survival Pack (129/161/161/161 verts — all small-item legal), plus Worker
+  from UMM's Individual Characters glTF (10,534 verts — actor legal). Shop
+  displays wear the real meshes; the held viewmodel is now per-tier
+  (`SHOVEL_MESHES` + per-tier `held_offsets`/`held_rotations`/`held_lengths`
+  /`held_tints` exports — five bespoke slots each, corey tunes in the Remote
+  tab; the toy slot's tint is the bright plastic). corey's pro-shovel hand
+  pose migrated from player.tscn overrides into slot 2's export defaults.
+- **Snow shovel is live**: SHOVELS tier 4, radius 0.0, $2000 like the pro,
+  purchasable ANYTIME (off the ladder — the scam tempts early), and clicking
+  any OWNED display re-equips it free (snow victims climb back out). The
+  zero-cell strike guard makes it dig exactly nothing while still clang-
+  jumping. `shovel_owned` (ladder height, 0-3) is now separate from
+  `shovel_tier` (equipped); both persist in state.json.
+- **The stopwatch runs.** `stopwatch_start_frame` stamps at control-gain
+  (boot) and re-stamps at the pour's end — the sell's silent zero. HUD joins
+  the top-right stack as mm:ss:ff (frames 0-124 at 125 Hz, Addendum 25's
+  sub-frame law). 582 verts accepted by ruling (16% over the small-item
+  budget, recorded).
+- **The shopkeeper is the UMM Worker** (Individual Characters glTF,
+  self-contained base64 buffer, no textures needed). Skeleton verdict: legacy
+  Quaternius rig (Abdomen/Chest/Foot.L) shares ONE name with UAL's UE-style
+  rig (Head) — UAL/UAL2 will not bind, exactly as suspected. But the Worker
+  glTF carries 24 of UMM's own animations (Idle, Interact, Wave,
+  HitRecieve...) — Idle plays at boot, and the pour's theater probes
+  Spell_* then falls back to Interact. FUTURE (ruled out of scope): retarget
+  the universal male/female skeletons onto the UAL rig.
+- **The first-click nit**: kiosk `_ready` establishes world-mode collision
+  layers at boot — products were ray-hittable (hover + eaten clicks) before
+  the first shop entry.
+- **No volume display** (ruled unnecessary): the ROADMAP exit test "volume
+  empty state reads 'You have no hole.'" loses its surface — to be amended
+  at the 0.0.5 gate.
+- Staircase shovel: mesh staged and cataloged; solver pass later this patch.
+- V0.0.4 export ritual + today's commit go still pending with corey.
+
+**Addendum 39 — the shop-click dispatcher, the snow straggler, the wrench
+returns (2026-10-19, third playtest round).**
+
+- **Shop-view clicks finally exist.** They never did: dig.gd stands down
+  whenever `inputs_held()`, and the aim only hovered — so inside the shop
+  view NOBODY handled a click, and selling/buying was impossible. The
+  architecture hole is closed where it belongs: the aim owns the virtual
+  cursor, so `aim.gd._unhandled_input` dispatches a `dig` press onto the
+  current hover target and consumes the event. World-mode clicking is
+  untouched (two-stage click in dig.gd); shop clicking is the aim's.
+- **The snow straggler:** `_set_shop_collision`'s product list was written
+  before the Snow display existed — `$Items/Snow` was missing, so the snow
+  shovel stayed ray-hittable in the world like the others used to be. Listed.
+- **The [ / ] debug cycler is back** (killed when purchases went live,
+  restored by ruling): actions re-added, `cycle_shovel_tier` routes through
+  `set_shovel_tier` (instant held-viewmodel swap) and wraps the WHOLE list
+  including snow, ownership ignored — the kiosk is the player path, this is
+  the wrench. HUD handler stands down over lenses as before.
+- **The pour is theater-paced — and my first pacing was inverted math.**
+  `rows / duration * ticks` is rows × 31 per FRAME, not rows per duration —
+  the 4 s export never stood a chance. Both animations are now LOCKED to six
+  seconds by ruling (pour and replay): `POUR_SECONDS` / `REPLAY_SECONDS`
+  consts, fractional slab/sphere credit per frame so even small holes take
+  the full six, a `pour_lead_seconds` (0.45) hold so the overhead glide
+  lands first, skip/end-state/lift laws intact. The rate law holds by orders
+  of magnitude either way. First implementation shipped with an
+  unconditional per-frame fill left over from the old budgeting — found by
+  corey's eyes, since the math "looked" paced on paper.
+- **`"buy_stopwatch"` had fallen out of `dispatch`** when buy_snow was added
+  (replaced, not appended) — the watch was unbuyable and its timer dead.
+  Branch restored; the other five actions verified present.
+- **Price tags**: snow's tag is updated like the others (same straggler
+  pattern, same lesson), and owned tags read PURCHASED across shovels and
+  the watch — the weapon wheel will own swapping later.
+- **The pour crash: the glide read a freed camera.** `_end_pour` frees the
+  transient pour camera while the exit glide is still lerping, and
+  `_run_lens_lerp` read `from.fov` per frame → "previously freed" at sell.
+  Fix + invariant: the glide captures src transform AND fov at start and
+  never touches the source object afterwards — any future transient lens is
+  free-to-free by construction.
+
