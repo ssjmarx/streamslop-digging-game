@@ -3,7 +3,6 @@
 ## dirt AND a surviving hole. emit_changed and generator-reassign both failed probe.
 extends SceneTree
 
-const MainScript := preload("res://scripts/main.gd")
 const WARMUP := 3.0
 const SETTLE := 4.0
 const SAMPLES := [Vector3i(0, -15, 0), Vector3i(0, -25, 0), Vector3i(0, -40, 0), Vector3i(0, -55, 0), Vector3i(0, -95, 0), Vector3i(0, -105, 0), Vector3i(0, -115, 0), Vector3i(5, -3, 5)]
@@ -11,6 +10,7 @@ const CARVED := Vector3i(5, -3, 5)   # an edit that must survive regeneration (h
 
 var _terrain: VoxelTerrain
 var _gen: VoxelGeneratorScript
+var _main_script: GDScript   # lazy: main.gd names autoloads, unresolvable at --script load time
 var _t := 0.0
 var _sampled := false
 var _grew := false
@@ -53,7 +53,9 @@ func _process(delta: float) -> bool:
 		vt.do_sphere(Vector3(5, -3, 5), 1.0)
 		var old_floor: int = _gen.depth_floor
 		_gen.ensure_depth(100.0)
-		MainScript.write_floor_blocks(_terrain, old_floor, _gen.depth_floor)
+		if _main_script == null:
+			_main_script = load("res://scripts/main.gd")   # by warmup the autoload globals exist, so main.gd compiles
+		_main_script.write_floor_blocks(_terrain, old_floor, _gen.depth_floor)
 		_t = 0.0   # settle timer restarts: give the remesh its SETTLE seconds
 		return false
 	_sampled = true

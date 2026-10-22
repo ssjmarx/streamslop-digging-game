@@ -1085,6 +1085,57 @@ returns (2026-10-19, third playtest round).**
   `set_shovel_tier` (instant held-viewmodel swap) and wraps the WHOLE list
   including snow, ownership ignored — the kiosk is the player path, this is
   the wrench. HUD handler stands down over lenses as before.
+
+**Addendum 40 — the debug tools meet reality (2026-10-19, fourth round).**
+
+- **DIG 1000M HOLE now reaches −1000.** The carve used `cells_in_sphere`,
+  which reads `get_voxel` — and unstreamed blocks read as air, so the shaft
+  stopped at the streamed frontier (~−272). Same frontier silently ate the
+  floor-grow writes (`try_set_block_data` fails for unstreamed blocks) — the
+  source of the warning flood. Rework: pure set_voxel air-edits (they persist
+  outside streamed areas), one `ensure_depth` for the generator floor, no
+  reads, no buffered writes; the shaft now centers on (0.5, ·, 0.5) so the
+  overhead pour view frames it dead-center.
+- **The pour silences the frontier the same way.** `_fill_row` returns its
+  failure count instead of warning per block; the pour prints one summary
+  line at the end, and its emission now STARTS at the theater floor (slabs
+  fully below the disk's start never need filling in-session). Debug fill
+  ALSO wipes the log and runs the floor reset — the terrain is refilled, so
+  the log and floor follow it, and the "hole is pristine again" print fires.
+  It still skips only the sale: no money, no watch zero.
+- **The debug menu starts hidden** — `_ready` never set `visible = false`
+  (the wardrobe menu does it in `bind()`; this one dropped the line).
+
+**Addendum 41 — the drill meets the edit frontier (2026-10-19, fifth
+round).** The first 1000m dig carved via `cells_in_sphere` (reads) and the
+rework via `set_voxel` — both bounded by the same law: VoxelTerrain only
+edits around its VIEWERS ("Area not editable"), and the surface viewer's
+reach ended ~−272m, silently voiding everything the debug dig thought it
+dug. `VoxelViewer` is the correct tool and it exists in the pinned build:
+the drill now spawns one (tight `view_distance`), descends it down the
+shaft in 64m chunks ahead of the carve, and per chunk: regens the slab
+range from the generator (healing prior voids via the shared
+`kiosk.regen_slab`, now static), carves the shaft cells, and appends the
+diglog spheres. A few awaited frames per chunk let the streamer catch up.
+Debug fill additionally reverted its floor reset (the log still wipes, the
+deep world stays solid for repeated drills — a real sale keeps the reset:
+below −20 voids, matching a fresh boot, self-healing on descent). Lesson:
+voxel edits are viewer-scoped, full stop — anything that writes at depth
+must bring its own viewer.
+- **The counts animate**: the HUD now chases targets — linear over the pour
+  during a sale (the numbers drain to 0 and climb to the payout in lockstep
+  with the rising disk), exponential otherwise — while GameState lands only
+  when the disk reaches the rim, per §10. Kiosk pushes the targets at pour
+  start via the HUD's `begin_sale_display`; the sale window ends when the
+  state matches the display, so there is no pop.
+- **The debug menu (~)**: DIG 1000M HOLE (a real 2m-radius strike column at
+  (2.5, *, 2.5) through floors-grow/cells-erase/dirt-accrues/log-learns —
+  the next boot replays it as a genuine hole), FILL HOLE (the pour theater
+  with a `debug_fill` flag: no sale, no watch zero, no log wipe — pure
+  waiter-lift testing), RESET PROGRESSION (money, dirt, item ownership; the
+  wardrobe, sign, and best depth stay). A "debug" lens holds inputs while
+  open, mouse frees for the buttons, and each action closes the menu so you
+  can fall into what you just dug.
 - **The pour is theater-paced — and my first pacing was inverted math.**
   `rows / duration * ticks` is rows × 31 per FRAME, not rows per duration —
   the 4 s export never stood a chance. Both animations are now LOCKED to six
@@ -1107,4 +1158,144 @@ returns (2026-10-19, third playtest round).**
   Fix + invariant: the glide captures src transform AND fov at start and
   never touches the source object afterwards — any future transient lens is
   free-to-free by construction.
+
+**Addendum 41 — the drill meets the edit frontier (2026-10-19, fifth
+round).** VoxelTerrain only accepts edits around its VIEWERS ("Area not
+editable" from voxel_tool.cpp) — the surface viewer's reach ended ~−272m,
+which is why the first two 1000m digs stopped early and voided below. The
+drill is now a RESUMABLE SCHEDULE per corey's spec: each 16m slab gates on a
+clean regen_slab (the editability probe — set_voxel cannot report failure),
+holds the viewer and retries next frame until the streamer delivers, and
+completes at −1008m with zero error spam. A stall bails after 2000 stream-
+waits and another DIG press resumes at the frontier. The drill descends its
+own VoxelViewer (tight view_distance) centered on the shaft, which also
+answers the deep-hole camera alignment: shaft, disk, and camera all share
+the (0.5, *, 0.5) axis. The carve counter now only counts cells carved after
+a clean slab regen, so the summary print is honest again.
+
+**Addendum 42 — the drill finds its flag (2026-10-19, sixth round).** The
+viewer-gated drill still stalled at −272 with ZERO stream-waits — and the
+probe (try_set_block_data) reported success everywhere. Decoded via the
+pinned API dump: VoxelViewer has `requires_data_block_notifications`, the
+flag that makes the terrain keep LOD0 DATA blocks resident around a viewer
+— and edits need resident data. The camera-as-viewer never asked for data
+at depth, so nothing was ever editable down there; try_set "succeeds" by
+design regardless. Two fixes: the drill's viewer sets the flag, and the
+probe became honest — write the generator block, then read a known-dirt
+cell back; a non-air read is the only green light to carve. Core lesson
+for the wall: `try_set_block_data` truth ≠ `set_voxel` truth; probe with
+the operation you will actually perform.
+
+**Addendum 43 — agent-round fixes on the same frontier (2026-10-19,
+seventh round).** Independent of the drill's viewer flag, three agent-side
+fixes plus one ruling landed:
+
+- **`_diglog_erase` fencepost**: hi-clamps were `origin + BLOCK_SIZE` with an
+  inclusive iteration — boundary spheres touched local cell 16 and asserted
+  (`Invalid position` ×6433 across the 1000m boot replay and drill). Clamps
+  are now `BLOCK_SIZE - 1`. The erase pass is otherwise unchanged.
+- **Skip parity**: the skip-completion loop predated `REPLAY_CUTOFF` and
+  wrote every remaining sphere raw — deep `set_voxel`s silently no-oped
+  below the streamed data, so skip and play-out produced DIFFERENT holes.
+  The cutoff filter now applies to both paths; end states are identical.
+- **The deep void reads black inside the apron**: an unshaded black
+  double-sided disk (r 60) at y = −2050 in main.tscn — below the −2000
+  catch-all rescue, so unreachable; the horizon outside the apron keeps the
+  sky's ground brown.
+- **Terminal velocity** (ruling): `terminal_velocity` export (60 m/s) clamps
+  falls after gravity, so the floor-grow and block streaming keep ahead of
+  any descent regardless of fall length.
+
+**Addendum 44 — the drill stops fighting the engine (2026-10-22, eighth
+round).** The 1000m test digs kept failing differently: stalls at −256/−320
+after 601 stream-waits, and sometimes a void chasm from ~−20m down with only
+the healed (0, ·, 0) block column standing beside the hole. Three roots, one
+per symptom:
+
+- **The stall was the streaming frontier, again.** The drill gated each slab
+  on `is_area_meshed` with NO viewer of its own — the Addenda 41–42 law
+  ("anything that writes at depth must bring its own viewer") had been dropped
+  in a rework, so the gate could only ever pass inside the surface viewer's
+  256m column. The stall depth was just where the player happened to be:
+  standing beside the shaft → −256; falling down it (spawn inside the
+  shaft-to-be) → the falling viewer carried the frontier to −320 until it
+  outran the 600-frame budget.
+- **The chasm was a paper floor.** `dig_debug_hole` called `ensure_depth`
+  without `write_floor_blocks` — meanwhile boot-time streaming (floor still
+  START_DEPTH=20) had already generated y∈[−256, −20) as resident AIR; only
+  the shaft's own block column got healed. Everything else the player could
+  see below −20 was born void.
+- **The resume was a lie.** `_drill_frontier` was read, never written —
+  "press DIG to resume" restarted from 0 and re-appended the whole partial
+  shaft, so every stalled session duplicated its spheres into every later
+  replay.
+
+The rework (corey's spec, ruling: WIPE-THEN-APPEND): DIG now writes the shaft
+as pure diglog entries — 334 spheres, every third row down to −1000, r=2, the
+exact set the old carve logged — banks one ~13,000-cell `dirt_dug`, and
+reloads the scene, so the boot machinery replays it (above −240 visually,
+below lazily, Addendum 40). No carving, no streaming, no viewers, no waits,
+no stall, no duplicates, ever. `diglog_writer.drill_shaft_spheres()` is the
+single source of the set.
+
+- **The boot pre-grow (`diglog_writer.ensure_diglog_depth`)**: the floor
+  learns the log's deepest entry BEFORE any block streams — a block can no
+  longer be born below-floor air, which kills the chasm root for every hole,
+  not just the drill. An empty log still boots at START_DEPTH, so the
+  sale/fill "fresh hole" semantics are untouched.
+- **`diglog_writer.reset()`** (truncate + reopen in one call): the drill's
+  re-arm, and the fix for a latent bug found on the way — `wipe()` left the
+  append handle null, so digs after a SALE were silently never logged until
+  the next boot.
+- **Probe law: never PRELOAD main.gd in a `--script` probe.** Script mode
+  compiles scripts before autoload globals are registered, and main.gd names
+  DirtBus — a preload fails to compile. `probe_depth_floor` (broken this way
+  by the WIP drill) now `load()`s main.gd lazily after warmup; `probe_drill`
+  (new) never touches main.gd at all — the log statics live on
+  diglog_writer, which is autoload-free.
+- **Validation:** probe_drill PASS (334-entry round-trip, floor 1024, dirt in
+  the old chasm zone, air in the lazy shaft, dirt in the lazy ring);
+  probe_depth_floor PASS again; headless boot with the shaft log — replay
+  0.61s, "hole: 334 spheres", no stall prints; headless DIG-press sim —
+  reload, exactly 334 entries, 13000 dirt banked. The stop sign's
+  "buried again" on a fresh save is pre-existing AABB-corner behavior; the
+  old "free from the start" came from a stored free pose, not the carve.
+
+**Addendum 45 — the sale that paid only once (2026-10-22).** Selling worked
+the first time and then money never moved again — and the DIRT counter sat
+pinned at 0 while digging. Root cause, found in the animated-sale-display
+WIP: `_on_dirt_sold` dropped its `money += price` line (the parameter was
+even renamed `_price`, unused) on the belief that "the kiosk transferred
+dirt -> money during the rise" — but the kiosk half of that move was never
+written, and a project-wide grep for `money +=` came back empty. Nothing
+added sale money anywhere.
+
+The display made it look like the first sale worked: the HUD lerps `$` up to
+`money + payout` during the pour, but its exit condition needs the REAL
+money to reach that target — impossible without a transfer — so sale mode
+never stood down. The pinned display then lied twice: DIRT frozen at 0 while
+digging, `$` frozen at the never-landed number, and each later sale's
+`begin_sale_display` snapping back to the truth read as "money not going
+up." `_sale_until_msec` was assigned and never read — the failsafe had been
+built and left unwired.
+
+- **The transfer is back** (GDD §3, 1 dirt = $1): `_on_dirt_sold` lands
+  `money += price` again. The pour emits `dirt_sold` at the last row, so
+  money lands at the rim while the HUD's animation covers the climb — same
+  player-facing shape, real state behind it.
+- **The HUD honors its own window now**: the sale display stands down when
+  the state lands OR the window expires — a missing transfer can never pin
+  the display on a lie again; it snaps to the truth instead.
+- **Post-sale digs log again**: `wipe()` deleted the file and left the
+  append handle null, so every dig after a sale was silently unrecorded
+  until the next boot (the hole would vanish on restart). `wipe()` now
+  reopens the handle — the next hole's first line lands, per §6c's intent.
+- **Probe law, part two**: headless process frames are uncapped while the
+  pour advances on physics ticks — a poll that waits out a pour must count
+  PHYSICS frames (probe_sell polls 1500), not process frames.
+- **Validation:** probe_sell PASS — sale two is the regression case: money
+  14000 -> 14300, exactly the additive dirt at 1:1, dirt collapsed to 0, the
+  HUD stood down after each pour, and a post-sale dig logged (1 entry).
+  Gates green; manual feel check (sell twice, watch $, buy a rung) pending
+  on corey's bench.
 

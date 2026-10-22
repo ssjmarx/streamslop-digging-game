@@ -4,6 +4,7 @@
 extends Node3D
 
 const AimScript := preload("res://scripts/player/aim.gd")   # the shared targeting rule
+const DiglogScript := preload("res://scripts/hole/diglog_writer.gd")   # the log's statics: shaft set + boot pre-grow
 
 # -- Config ------
 
@@ -11,6 +12,7 @@ const SUN_ROTATION_DEG := Vector3(-50.0, 30.0, 0.0)
 const SPAWN_GROUND_AREA := AABB(Vector3(-2, -3, -2), Vector3(4, 4, 4))
 const LOADER_FAILSAFE_SECONDS := 15.0
 const REPLAY_SECONDS := 6.0   # the replay is locked to six seconds (ruling 2026-10-19)
+const REPLAY_CUTOFF := 240.0   # spheres deeper than this materialize lazily (Addendum 40)
 
 @export_group("Depth Floor")
 ## Meters of fresh dirt kept below the player; the floor grows ahead of her.
@@ -78,6 +80,19 @@ func _rescue_player(player: CharacterBody3D) -> void:
 	print("loader: rescue teleport -> %s" % player.global_position)
 
 
+## Debug (2026-10-19; log-first rework 2026-10-22): the 1000m shaft is appended to the diglog as pure entries -- no carving, no streaming, no viewers (Addendum 44) -- then the scene reloads and the boot machinery replays it: spheres above REPLAY_CUTOFF visually, below lazily (Addendum 40). Every press wipes first, so the log holds exactly one canonical shaft.
+func dig_debug_hole() -> void:
+	var diglog := $Diglog as Node
+	diglog.reset()
+	var spheres := 0
+	for center in DiglogScript.drill_shaft_spheres():
+		diglog.append_sphere(center, 2.0)
+		spheres += 1
+	DirtBus.dirt_dug.emit(13 * 1000, Vector3i(0, -1000, 0), -1000.0, 1)   # 13 cells per row x 1000 rows: approximately honest (GDD App. B)
+	print("debug: 1000m shaft appended (%d spheres) -- reload reruns the loader" % spheres)
+	get_tree().reload_current_scene()
+
+
 ## Grounded rescue spawn: ring-outward, the first column whose top-most solid (any depth) has a solid 3x3 row under it; the floor guarantees a hit.
 func _find_grounded_spawn(terrain: VoxelTerrain) -> Vector3:
 	var vt := terrain.get_voxel_tool()
@@ -116,6 +131,11 @@ func _grounded_on_column(vt: VoxelTool, gen: VoxelGenerator, x: int, z: int, low
 ## Boot: rotate the sun, bake the library, start the loading sequence.
 func _ready() -> void:
 	($Sun as DirectionalLight3D).rotation_degrees = SUN_ROTATION_DEG
+	# the diglog materializes lazily (Addendum 40): live strikes and wipes keep the generator's index in step
+	var diglog := $Diglog as Node
+	var generator := ($Hole as VoxelTerrain).generator
+	diglog.appended.connect(generator.append_diglog_sphere)
+	diglog.wiped.connect(generator.clear_diglog_spheres)
 	# scene-loaded libraries may arrive unbaked; bake is idempotent
 	var mesher := ($Hole as VoxelTerrain).mesher as VoxelMesherBlocky
 	if mesher != null and mesher.library != null:
@@ -131,6 +151,10 @@ func _boot_spawn_sequence(with_replay: bool, preserve_camera := false) -> void:
 	var entries: Array[Dictionary] = []   # not a ternary: the literal loses its typing mid-expression (Addendum 22)
 	if with_replay:
 		entries = ($Diglog as Node).read_entries()
+	# the floor learns the log's full depth before any block streams -- a block born below the floor is air (Addendum 44)
+	DiglogScript.ensure_diglog_depth(terrain.generator, entries, int(depth_margin))
+	# deep spheres materialize lazily: streamed blocks are born pre-dug (Addendum 40)
+	($Hole as VoxelTerrain).generator.load_diglog_spheres(entries, -REPLAY_CUTOFF)
 	var spec: Camera3D = null
 	if not entries.is_empty():
 		_sequence_active = true
@@ -204,6 +228,9 @@ func _replay_bands(terrain: VoxelTerrain, entries: Array[Dictionary]) -> void:
 		while i < total and credit >= 1.0:
 			var e: Dictionary = sorted[i]
 			var e_center: Vector3 = e.c
+			if e_center.y <= -REPLAY_CUTOFF:
+				i += 1   # below the cutoff: materializes lazily, never written here
+				continue
 			var need := floori(-e_center.y) + int(depth_margin)
 			if terrain.generator.depth_floor < need and terrain.generator.ensure_depth(float(need)):
 				write_floor_blocks(terrain, old_floor, terrain.generator.depth_floor)
@@ -218,6 +245,8 @@ func _replay_bands(terrain: VoxelTerrain, entries: Array[Dictionary]) -> void:
 	if _skip_requested:   # the end state must be complete even when skipped
 		for j in range(i, total):
 			var e: Dictionary = sorted[j]
+			if e.c.y <= -REPLAY_CUTOFF:
+				continue   # below the cutoff: materializes lazily, never written here
 			for cell in AimScript.cells_in_sphere(vt, e.c, e.r):
 				vt.set_voxel(cell, 0)
 	print("replay: %d spheres visually in %.2fs" % [total, float(Time.get_ticks_usec() - t0) / 1e6])

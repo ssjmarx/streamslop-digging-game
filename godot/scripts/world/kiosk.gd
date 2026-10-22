@@ -119,12 +119,22 @@ func _begin_sale() -> void:
 	if carried <= 0:
 		$UiClick.play()   # nothing to sell: the shopkeeper says nothing
 		return
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null:
+		hud.begin_sale_display(carried, carried, POUR_SECONDS + pour_lead_seconds)
 	_begin_pour(carried)
+
+
+## Debug (ruling 2026-10-19): the fill theater without the sale -- the point is the waiter lift.
+func begin_debug_fill() -> void:
+	if _pouring:
+		return
+	_begin_pour(0, true)
 
 # -- Pour (the theater is mandatory; the rate is a safety invariant) ------
 
-## The pour: a checker disk rises from the hole's bottom under the overhead lens; slabs re-emit behind it, hidden.
-func _begin_pour(carried: int) -> void:
+## The pour: a checker disk rises from the hole's bottom under the overhead lens; slabs re-emit behind it, hidden. Debug fill runs the same theater without the sale.
+func _begin_pour(carried: int, debug_fill := false) -> void:
 	_pouring = true
 	_skip_requested = false
 	GameState.view_lens = "pour"
@@ -146,6 +156,9 @@ func _begin_pour(carried: int) -> void:
 	var disk := _make_fill_disk(start_y)
 	var slab_bottom := -ceili(float(generator.depth_floor) / float(block_size)) * block_size   # slab-aligned bottom
 	var by := slab_bottom
+	while by + block_size < start_y:
+		by += block_size   # slabs fully below the theater floor never need filling
+	var failed := 0
 	await get_tree().create_timer(pour_lead_seconds).timeout   # the glide lands before the rise starts
 	var rise_per_frame := -start_y / (POUR_SECONDS * float(Engine.physics_ticks_per_second))
 	while disk.global_position.y < 0.0:
@@ -155,31 +168,34 @@ func _begin_pour(carried: int) -> void:
 		disk.global_position.y = minf(disk.global_position.y + rise_per_frame, 0.0)
 		var fill_to := disk.global_position.y
 		while by < 0 and float(by + block_size) <= fill_to + 0.001:
-			_fill_row(terrain, by, block_size, radius)
+			failed += regen_slab(terrain, by, block_size, radius)
 			by += block_size
 		_lift_waiter(terrain, player, fill_to)
 	disk.visible = false
 	if _skip_requested:   # the end state must be complete even when skipped
 		while by < 0:
-			_fill_row(terrain, by, block_size, radius)
+			failed += regen_slab(terrain, by, block_size, radius)
 			by += block_size
 	_lift_waiter(terrain, player, 0.0)
 	disk.queue_free()
-	# the floor law returns: below START_DEPTH is void again, byte-identical to a fresh boot
-	generator.depth_floor = 20
-	var slab := slab_bottom
-	while slab < 0:
-		_fill_row(terrain, slab, block_size, radius)
-		slab += block_size
+	# the truth is written: the log wipes for both paths. A real sale also returns the floor law (below START_DEPTH voids, matching a fresh boot -- self-healing on descent); a debug fill keeps the deep world solid so the drill can re-dig.
 	var diglog := get_tree().get_first_node_in_group("diglog")
 	if diglog != null:
 		diglog.wipe()
-	DirtBus.dirt_sold.emit(carried, carried, 1)
-	$Shopkeeper/VoiceSold.play()
-	var sign := get_tree().get_first_node_in_group("stop_sign")
-	if sign != null:
-		sign.materialize(terrain)
-	_end_pour()
+	if not debug_fill:
+		generator.depth_floor = 20
+		var slab := slab_bottom
+		while slab < 0:
+			failed += regen_slab(terrain, slab, block_size, radius)
+			slab += block_size
+		DirtBus.dirt_sold.emit(carried, carried, 1)
+		$Shopkeeper/VoiceSold.play()
+		var sign := get_tree().get_first_node_in_group("stop_sign")
+		if sign != null:
+			sign.materialize(terrain)
+	if failed > 0:
+		print("pour: %d deep block writes skipped (unstreamed) -- the reload is the truth" % failed)
+	_end_pour(debug_fill)
 
 
 ## The theater disk: checker quads that read as the voxel tops, rising with the fill.
@@ -221,8 +237,8 @@ func _make_fill_disk(start_y: float) -> MeshInstance3D:
 	return disk
 
 
-## The pour winds down: leave the overhead lens, hand the world (and the body) back.
-func _end_pour() -> void:
+## The pour winds down: leave the overhead lens, hand the world (and the body) back. A debug fill skips the watch's zero.
+func _end_pour(debug_fill := false) -> void:
 	if _pour_cam != null:
 		_pour_cam.queue_free()
 		_pour_cam = null
@@ -233,7 +249,8 @@ func _end_pour() -> void:
 	if player != null:
 		player.exit_lens()
 		player.set_body_visible(true)
-	GameState.stopwatch_reset()   # the sell's silent zero: the run restarts at control
+	if not debug_fill:
+		GameState.stopwatch_reset()   # the sell's silent zero: the run restarts at control
 	_refresh_price_tags()
 
 
@@ -249,10 +266,11 @@ func _lift_waiter(terrain: VoxelTerrain, player: Node, line_top: float) -> void:
 		player.velocity = Vector3(player.velocity.x, 0.0, player.velocity.z)
 
 
-## Re-emit one data-block row from the generator: behind the line the world is pristine (the main.gd shape).
-func _fill_row(terrain: VoxelTerrain, by: int, block_size: int, radius: int) -> void:
+## Regenerate one data-block slab from the generator: behind the line the world is pristine (the main.gd shape). Static for reuse. Returns the unstreamed-failure count -- deep writes skip silently; the reload is the truth for those.
+static func regen_slab(terrain: VoxelTerrain, by: int, block_size: int, radius: int) -> int:
 	var generator := terrain.generator
 	var start := -ceili(float(radius) / float(block_size)) * block_size
+	var failed := 0
 	for bz in range(start, radius, block_size):
 		for bx in range(start, radius, block_size):
 			var nearest_x := clampi(0, bx, bx + block_size)
@@ -263,7 +281,8 @@ func _fill_row(terrain: VoxelTerrain, by: int, block_size: int, radius: int) -> 
 			buffer.create(block_size, block_size, block_size)
 			generator._generate_block(buffer, Vector3i(bx, by, bz), 0)
 			if not terrain.try_set_block_data(terrain.voxel_to_data_block(Vector3i(bx, by, bz)), buffer):
-				push_warning("pour: try_set_block_data failed at %s" % Vector3i(bx, by, bz))
+				failed += 1
+	return failed
 
 
 ## The overhead pour shot: the boot spectator's twin, above the hole looking down.

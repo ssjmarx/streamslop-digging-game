@@ -10,6 +10,8 @@ extends CharacterBody3D
 @export var gravity := 25.7
 ## Q3 JUMP_VELOCITY 270u: 1.46m high, 0.68s air -- clears one voxel.
 @export var jump_velocity := 8.67
+## Terminal fall speed: the floor-grow and block streaming must keep ahead of any descent.
+@export var terminal_velocity := 60.0
 @export_group("Movement")
 ## Full Q3 run (g_speed 320u x 0.0321 m/u). The default gear.
 @export var run_speed := 10.3
@@ -254,6 +256,7 @@ func _physics_process(delta: float) -> void:
 	var frozen: bool = GameState.inputs_held()   # a lens holds movement; gravity slides on
 	if not is_on_floor():
 		velocity.y -= gravity * delta
+		velocity.y = maxf(velocity.y, -terminal_velocity)   # never outrun the floor-grow and streaming
 	if not frozen and Input.is_action_just_pressed("jump") and is_on_floor():
 		velocity.y = jump_velocity
 		jumped = true

@@ -5,7 +5,7 @@
 [sub_resource type="SystemFont" id="mono_font"]
 font_names = PackedStringArray("Monospace")
 
-[node name="HUD" type="CanvasLayer"]
+[node name="HUD" type="CanvasLayer" groups=["hud"]]
 script = ExtResource("1_hud")
 
 [node name="DirtCounter" type="Label" parent="."]

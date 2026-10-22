@@ -13,6 +13,19 @@
 [ext_resource type="ArrayMesh" uid="uid://vdnoxx8bo8l5" path="res://scenes/world/apron_mesh.tres" id="11_apronmesh"]
 [ext_resource type="PackedScene" uid="uid://pysmxnxilbgf" path="res://scenes/world/kiosk.tscn" id="12_kiosk"]
 [ext_resource type="Shape3D" uid="uid://qr8nca7q4otk" path="res://scenes/world/apron_shape.tres" id="13_apronshape"]
+[ext_resource type="Script" path="res://scripts/ui/debug_menu.gd" id="14_debugmenu"]
+
+[sub_resource type="StandardMaterial3D" id="void_floor_material"]
+albedo_color = Color(0, 0, 0, 1)
+shading_mode = 0
+cull_mode = 2
+
+[sub_resource type="CylinderMesh" id="void_floor_mesh"]
+top_radius = 60.0
+bottom_radius = 60.0
+height = 2.0
+radial_segments = 64
+material = SubResource("void_floor_material")
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.36, 0.55, 0.8, 1)
@@ -62,7 +75,7 @@ shadow_enabled = true
 environment = SubResource("environment")
 
 [node name="Hole" type="VoxelTerrain" parent="." unique_id=1297287148 groups=["terrain"]]
-max_view_distance = 256
+max_view_distance = 1024
 material_override = SubResource("terrain_material")
 generator = SubResource("flat_generator")
 mesher = SubResource("blocky_mesher")
@@ -104,5 +117,14 @@ mesh = ExtResource("11_apronmesh")
 [node name="Shape" type="CollisionShape3D" parent="Apron/Body" unique_id=1884669455]
 shape = ExtResource("13_apronshape")
 
+[node name="VoidFloor" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2050, 0)
+cast_shadow = 0
+mesh = SubResource("void_floor_mesh")
+
 [node name="Kiosk" parent="." unique_id=965258059 instance=ExtResource("12_kiosk")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.11447859, 0, 54.544495)
+
+[node name="DebugMenu" type="CanvasLayer" parent="."]
+layer = 10
+script = ExtResource("14_debugmenu")

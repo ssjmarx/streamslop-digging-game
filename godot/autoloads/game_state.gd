@@ -62,11 +62,25 @@ func _on_dirt_dug(amount: int, _voxel_pos: Vector3i, depth: float, _by_peer: int
 	touch()
 
 
-## The sale collapses carried dirt into money at the kiosk (1 dirt = $1, GDD §3).
+## The end-of-sale record (§10): carried dirt collapses to money at 1:1 (GDD §3) as the pour's last row lands; the HUD's sale animation already ran the climb.
 func _on_dirt_sold(_amount: int, price: int, _by_peer: int) -> void:
 	money += price
 	dirt = 0
 	touch()
+
+
+## Debug (2026-10-19): fresh-save progression values, saved immediately; wardrobe and sign survive.
+func debug_reset_progression() -> void:
+	money = 0
+	dirt = 0
+	shovel_tier = 0
+	shovel_owned = 0
+	snow_owned = false
+	stopwatch_owned = false
+	best_depth = 0.0
+	stopwatch_start_frame = Engine.get_physics_frames()
+	save_now()
+	shovel_changed.emit()
 
 
 ## The stopwatch law (§6e): the run starts at control-gain; the pour's end calls this again for the sell's silent zero.
@@ -91,6 +105,17 @@ func set_shovel_tier(tier: int) -> void:
 	shovel_tier = clampi(tier, 0, SHOVELS.size() - 1)
 	touch()
 	shovel_changed.emit()
+
+
+## Debug (ruling 2026-10-19): wipe money, dirt, and item ownership; the wardrobe, the sign, and best depth stay.
+func reset_progression() -> void:
+	dirt = 0
+	money = 0
+	shovel_owned = 0
+	snow_owned = false
+	stopwatch_owned = false
+	set_shovel_tier(0)
+	save_now()
 
 
 ## Debug only (restored 2026-10-19): cycle the whole list incl. snow, ownership ignored -- the kiosk is the player path, this is the wrench.
