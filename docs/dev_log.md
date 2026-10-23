@@ -1299,3 +1299,45 @@ built and left unwired.
   Gates green; manual feel check (sell twice, watch $, buy a rung) pending
   on corey's bench.
 
+**Addendum 46 — the 0.0.4 final audit; 0.0.5 prep (2026-10-22).** All eight
+wardrobe exit tests re-verified against the code with file:line evidence; the
+automation boundary held (wardrobe.gd is visibility+tint only; body_cull
+dormant; wardrobe_check.py reads-only and PASS on the shipped GLB — 89 nodes,
+23 skinned pieces, 65 joints). Three rulings landed at the audit, and the
+docs now say so:
+
+- **The male body is deferred** (unassigned later pt, beside the pedestal
+  select and the sign mirror). ROADMAP §5's "swaps male/female live" exit
+  test is struck; one body shipped at the gate.
+- **RANDOMIZE was never a ruling** — agent drift in the ROADMAP scope text,
+  struck. The code never had it; the docs now match.
+- **The shopkeeper fear anim is dropped.** No fear clip exists in any owned
+  pack (Worker's 24 UMM clips, UAL2's 43 — verified by name), and the idea is
+  retired rather than authored. ROADMAP §5's v0.0.5 exit test is struck down
+  to "he never descends" (already structural — no descent code exists); GDD
+  §6c loses "visibly trembling."
+
+0.0.5 prep landed with it:
+
+- **The volume empty state lives on the boot line**: a blank diglog boots
+  with the loading label reading "You have no hole." (0.0.5 exit-test copy,
+  verbatim; ruling 2026-10-22 — the HUD's DIRT line stays numeric). §11's
+  stack is law; the DIRT counter remains the live volume.
+- **A wiped log stays GONE**: `wipe()` deletes and keeps the handle closed;
+  `append_sphere` lazily reopens on the next dig. Post-sale digs still log
+  (Addendum 45's fix survives), and the 0.0.5 exit test's letter holds —
+  diglog.jsonl is absent from user:// after a sell, not an empty husk.
+- **probe_restore** (new, headless): five spheres dug through the real rule,
+  sold through the real kiosk, every carved cell must come back solid, five
+  controls untouched, diglog gone — the "terrain spot-checks" and
+  "voxel-exact restore" exit tests, automated.
+- **Probe law, generalized**: it is not just main.gd — ANY script that names
+  an autoload fails to compile at --script load time, and one failed preload
+  poisons the cached resource for the whole scene (a probe's aim.gd preload
+  broke the boot replay's carve through the cached copy). Probes lazy-load
+  after warmup and reach autoloads by root.get_node only.
+- **Still on corey's bench for the v0.0.5 gate:** the stopwatch decimation
+  (21,299 verts -> <= 500), the by-hand boxes (waiter lift from -20m,
+  pour-vs-ergonomic rate, relaunch-after-sell instant, snow uselessness
+  watched, feel checklist in full), then the build ritual.
+

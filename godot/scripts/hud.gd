@@ -80,3 +80,8 @@ func _chase(shown: float, target: float, delta: float) -> float:
 ## Boot sequence label (0.0.3 ruling): "loading your hole."
 func set_loading(v: bool) -> void:
 	($LoadLabel as Label).visible = v
+
+
+## The loading line's copy per boot: "loading your hole.", or the blank-log line (0.0.5).
+func set_loading_message(text: String) -> void:
+	($LoadLabel as Label).text = text

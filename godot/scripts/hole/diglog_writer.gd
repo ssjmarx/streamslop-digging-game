@@ -41,6 +41,8 @@ func _is_legacy_schema() -> bool:
 ## Append one float strike center + radius; NOT the floored voxel (breaks replay).
 func append_sphere(center: Vector3, radius: float) -> void:
 	if _file == null:
+		_file = FileAccess.open(DIGLOG_PATH, FileAccess.WRITE)   # a fresh hole's first line (lazy: a wiped log stays gone until a dig lands)
+	if _file == null:
 		return
 	_file.store_line(JSON.stringify({
 		"c": [center.x, center.y, center.z],
@@ -72,7 +74,7 @@ func read_entries() -> Array[Dictionary]:
 	return entries
 
 
-## The truth, after the theater (§6c): delete the file -- the hole un-happens -- then reopen the append handle, because the next hole's first line must land (found 2026-10-22: the closed handle silenced every dig after a sale).
+## The truth, after the theater (§6c): close the handle and delete the file -- the hole un-happens; the next dig lazily reopens, so a wiped log stays GONE (the 0.0.5 exit test) while post-sale digs still log (Addendum 46).
 func wipe() -> void:
 	if _file != null:
 		_file.close()
@@ -82,9 +84,6 @@ func wipe() -> void:
 		dir.remove("diglog.jsonl")
 		wiped.emit()
 		print("diglog: wiped -- the hole is pristine again")
-	_file = FileAccess.open(DIGLOG_PATH, FileAccess.WRITE)   # a fresh hole's first line
-	if _file != null:
-		_file.seek_end()
 
 
 ## The drill's re-arm (Addendum 44): truncate and reopen the append handle in the same call -- the sale never appends after wiping, the drill does.

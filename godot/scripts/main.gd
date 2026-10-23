@@ -156,11 +156,12 @@ func _boot_spawn_sequence(with_replay: bool, preserve_camera := false) -> void:
 	# deep spheres materialize lazily: streamed blocks are born pre-dug (Addendum 40)
 	($Hole as VoxelTerrain).generator.load_diglog_spheres(entries, -REPLAY_CUTOFF)
 	var spec: Camera3D = null
+	($HUD as CanvasLayer).set_loading_message("loading your hole." if not entries.is_empty() else "You have no hole.")   # the blank-log boot line (0.0.5 exit test)
+	($HUD as CanvasLayer).set_loading(true)
 	if not entries.is_empty():
 		_sequence_active = true
 		_skip_requested = false
 		spec = _make_spectator(entries)   # the boot camera, frame one
-		($HUD as CanvasLayer).set_loading(true)
 	player.set_body_visible(false)   # rescue: hide across the teleport; boot: nothing to hide yet
 	await _await_area_meshed(SPAWN_GROUND_AREA)
 	if not entries.is_empty():
@@ -178,8 +179,8 @@ func _boot_spawn_sequence(with_replay: bool, preserve_camera := false) -> void:
 	if spec != null:
 		await _lerp_spectator_to_player(spec, player)   # step 5: the descent to first person
 		spec.queue_free()
-		($HUD as CanvasLayer).set_loading(false)
 		_sequence_active = false
+	($HUD as CanvasLayer).set_loading(false)
 	player.set_camera_mode(player.third_person if preserve_camera else false)   # step 6: boot lands FPV; a rescue keeps the mode it caught you in
 	GameState.stopwatch_reset()   # the stopwatch law: the run starts at control (Addendum 25)
 	player.on_ground_ready()

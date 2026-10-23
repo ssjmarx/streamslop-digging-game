@@ -138,12 +138,16 @@ already rejected in pt1; nothing surfaces the number — dev_log Addendum 23).
 **Scope:** the wardrobe, pushed up (amendment 2026-10-18): bodies and pieces
 authored in Blender — one GLB per body, every piece skinned to the one armature,
 worn as overlays, hidden by an authored slot table; the debug wardrobe menu
-(body swap, per-slot cycling, RANDOMIZE), persistence, ghost parity. The
+(per-slot cycling, hair swatches), persistence, ghost parity. The
 automation boundary is scope law: geometry is human in Blender, tools only check
 (`tools/wardrobe_check.py`), runtime is state only (dev_log Entry #4).
-Closed at the 2026-10-19 gate; the pedestal select and the sign mirror are
-deferred to an unassigned later pt (ruling: "lets make the 0.0.4 tag").
-**Exit tests:** ☐ the debug menu swaps male/female live ☐ every slot cycles
+Closed at the 2026-10-19 gate; the pedestal select, the sign mirror, and the
+male body are deferred to an unassigned later pt (ruling: "lets make the
+0.0.4 tag"; male body ruled deferred at the 2026-10-22 final audit, where
+RANDOMIZE was also struck from this text as never-ruled agent drift —
+Addendum 46).
+**Exit tests:** ~~☐ the debug menu swaps male/female live~~ — male body
+deferred (ruling 2026-10-22); RANDOMIZE was never a ruling ☐ every slot cycles
 independently; mixed kits bend together in FPV and TPV ☐ the choice persists
 across restart ☐ the ghost stays dressed identically ☐ dig-jump and swing are
 clean in mixed kit ☐ the Ranger set on the female body reads identical to the
@@ -171,7 +175,8 @@ on sell, silently ☐ volume empty state reads "You have no hole." ☐ relaunch 
 sell loads instantly ☐ sell → hole restores voxel-exact at 5 spot-checks ☐ snow shovel
 purchasable, equippable, useless — uselessness verified, because a scam you don't
 verify is just a bug ☐ ergonomic stats byte-identical to Regular (regression forever)
-☐ shopkeeper's fear anim plays at the rim; he never descends.
+☐ ~~shopkeeper's fear anim plays at the rim~~ — the fear anim is dropped
+(ruling 2026-10-22: no fear clip authored, idea retired); he never descends.
 
 ### v0.0.6 — CREDITS
 **Question:** Is every asset accounted for?

@@ -179,9 +179,9 @@ ground but also it's a giant co-op quake 3 level."
   click skips the theater to the complete end state. The shopkeeper lifts any
   player standing in the fill column to the surface (he is also the only
   elevator).
-- He never checks whether the hole is occupied (§6f). He walks to the rim visibly
-  trembling and fills; his tool is never modeled, never shown up close, never
-  for sale (the Long Shovel was dropped at the 0.0.4 gate, ruling 2026-10-19 —
+- He never checks whether the hole is occupied (§6f). He walks to the rim and
+  fills; his tool is never modeled, never shown up close, never for sale (the
+  Long Shovel was dropped at the 0.0.4 gate, ruling 2026-10-19 —
   never made, never shipped).
 - Shop inventory at launch: five items, one scam (Snow Shovel — purchasable,
   equippable, useless), one meta item (§6e). The Ergonomic Shovel has byte-identical
